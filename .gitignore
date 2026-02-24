@@ -1,0 +1,61 @@
+# ===============================
+# 🔹 Object / Binary Files
+# ===============================
+*.o
+*.obj
+*.out
+*.elf
+*.bin
+*.hex
+*.exe
+
+# ===============================
+# 🔹 Simulation Files
+# ===============================
+*.vcd
+*.fsdb
+*.wdb
+*.log
+
+# ===============================
+# 🔹 OpenROAD / PnR Generated Files
+# ===============================
+*.odb
+*.def
+*.lef
+*.gds
+*.spef
+*.sdc
+*.lib
+
+# OpenROAD result folders
+pnr/results/
+pnr/logs/
+pnr/reports/
+
+# Any generic results folder
+results/
+reports/
+logs/
+
+# ===============================
+# 🔹 Tool Junk
+# ===============================
+*.jou
+*.rpt
+*.str
+
+# ===============================
+# 🔹 Build Folders
+# ===============================
+build/
+sim/
+out/
+
+# ===============================
+# 🔹 Editors / OS
+# ===============================
+.vscode/
+.DS_Store
+yosys/tmp/
+yosys/tmp/
