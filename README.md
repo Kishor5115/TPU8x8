@@ -14,10 +14,22 @@ This project implement an 8x8 matrix multiplication accelerator (TPU) from RTL t
 - **Automated PnR Flow**: Complete OpenROAD-based physical design flow with automated signoff and GDS generation.
 
 ## Architecture
-The TPU performs matrix multiplication $C = A \times B$, where $A$ is the weight matrix and $B$ is the data matrix.
-- **Weights** are loaded into the array and stored locally in each cell's weight register.
-- **Data** flows through the array from left to right.
-- **Partial Results** accumulate within each cell and are eventually shifted out to memory.
+
+The TPU performs matrix multiplication $C = D \times W^T$, where $D$ is the Data matrix and $W$ is the Weight matrix. This corresponds to the mathematical operation:
+$C[i][j] = \sum_{k=0}^{7} D[i][k] \times W[j][k]$
+
+### Data Flow
+- **Systolic Array Type**: Output-Stationary. Each cell `(i,j)` contains an accumulator that stores the final results $C[i][j]$.
+- **Weights ($W$)**: Enter from the top and flow down through rows.
+- **Data ($D$)**: Enter from the left and flow right across columns.
+
+### Input Skewing
+To ensure correct time-alignment of partial products, inputs must be fed into the SRAMs with **diagonal skewing**:
+- Row `i` of the Data matrix is delayed by `i` cycles.
+- Row `i` of the Weight matrix is delayed by `i` cycles.
+- For this specific implementation (using a single SRAM address for 4-row groups), the second group (rows 4-7) requires an additional 4-cycle offset to account for the integrated memory architecture.
+
+Rendered results are stored in **anti-diagonal order** in the output SRAMs.
 
 | Component | Specification |
 |-----------|---------------|
