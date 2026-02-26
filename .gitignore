@@ -37,6 +37,7 @@ pnr/reports/
 results/
 reports/
 logs/
+pnr/klayout/.klayout/
 
 # ===============================
 # 🔹 Tool Junk

@@ -187,53 +187,12 @@ puts ""
 puts "--- SRAM Libraries (TPU Memory Blocks) ---"
 puts ""
 
-# Calculate TPU memory requirements
-# Read parameters from config.tcl if available
-if {[info exists ARRAY_SIZE]} {
-    set matrix_size $ARRAY_SIZE
-} else {
-    set matrix_size 8  ;# Default: 8×8 array
-}
-
-if {[info exists DATA_WIDTH]} {
-    set input_data_width $DATA_WIDTH
-} else {
-    set input_data_width 8  ;# Default: INT8
-}
-
-if {[info exists OUTPUT_DATA_WIDTH]} {
-    set output_data_width $OUTPUT_DATA_WIDTH
-} else {
-    set output_data_width 16  ;# Default: INT16
-}
-
-# Calculate storage requirements
-set elements_per_matrix [expr {$matrix_size * $matrix_size}]
-set bytes_per_input_matrix [expr {($elements_per_matrix * $input_data_width) / 8}]
-set bytes_per_output_matrix [expr {($elements_per_matrix * $output_data_width) / 8}]
-set kb_per_input_matrix [expr {$bytes_per_input_matrix / 1024.0}]
-set kb_per_output_matrix [expr {$bytes_per_output_matrix / 1024.0}]
-
-puts "TPU Memory Requirements (8×8 Array - 64 MACs):"
-puts "  Array size: ${matrix_size}×${matrix_size} (${elements_per_matrix} MACs)"
-puts "  Input data width: ${input_data_width} bits (INT${input_data_width})"
-puts "  Output data width: ${output_data_width} bits (INT${output_data_width})"
-puts ""
-puts "  Storage per input matrix: ${bytes_per_input_matrix} bytes ([format %.4f $kb_per_input_matrix] KB)"
-puts "  Storage per output matrix: ${bytes_per_output_matrix} bytes ([format %.4f $kb_per_output_matrix] KB)"
-puts ""
-puts "  Expected SRAM Macros for 8×8 TPU:"
-puts "    - 2× RM_IHPSG13_1P_1024x64_c2_bm_bist (Weight + Data)"
-puts "    - 6× RM_IHPSG13_1P_256x64_c2_bm_bist (Output A/B/C × 2)"
-puts "    - Total: 8 SRAM macros"
-puts ""
-
 # Load SRAM libraries for all corners
-# For 8×8 TPU: Need RM_IHPSG13_1P_1024x64 and RM_IHPSG13_1P_256x64
+# For 8×8 TPU: Need RM_IHPSG13_1P_256x64 and RM_IHPSG13_1P_64x64
 set sram_loaded 0
 set sram_files_found 0
-set sram_1024x64_found 0
 set sram_256x64_found 0
+set sram_64x64_found 0
 
 foreach {corner suffix} {
     tt "typ_1p20V_25C"
@@ -250,11 +209,11 @@ foreach {corner suffix} {
             puts "✓ [string toupper $corner]: $fname"
             
             # Check for specific TPU macros
-            if {[string match "*1024x64*" $fname]} {
-                set sram_1024x64_found 1
-            }
             if {[string match "*256x64*" $fname]} {
                 set sram_256x64_found 1
+            }
+            if {[string match "*64x64*" $fname]} {
+                set sram_64x64_found 1
             }
             
             incr sram_loaded
@@ -268,24 +227,24 @@ if {$sram_loaded == 0} {
     puts "  Searched in: $pdk_sram_lib"
     puts ""
     puts "  Critical for 8×8 TPU:"
-    puts "  - RM_IHPSG13_1P_1024x64_c2_bm_bist (input weights/activations)"
-    puts "  - RM_IHPSG13_1P_256x64_c2_bm_bist (output accumulators)"
+    puts "  - RM_IHPSG13_1P_256x64_c2_bm_bist  (input weights/activations)"
+    puts "  - RM_IHPSG13_1P_64x64_c2_bm_bist   (output accumulators)"
     puts ""
     puts "  Impact: Cannot place SRAM macros - design will fail"
 } else {
     puts ""
     puts "SRAM libraries: $sram_loaded files loaded across [expr {$sram_files_found}] corners"
     
-    if {$sram_1024x64_found} {
-        puts "✓ Found: RM_IHPSG13_1P_1024x64 (input SRAMs for 8×8 TPU)"
-    } else {
-        puts "⚠ Missing: RM_IHPSG13_1P_1024x64"
-    }
-    
     if {$sram_256x64_found} {
-        puts "✓ Found: RM_IHPSG13_1P_256x64 (output SRAMs for 8×8 TPU)"
+        puts "✓ Found: RM_IHPSG13_1P_256x64 (input SRAMs for 8×8 TPU)"
     } else {
         puts "⚠ Missing: RM_IHPSG13_1P_256x64"
+    }
+    
+    if {$sram_64x64_found} {
+        puts "✓ Found: RM_IHPSG13_1P_64x64 (output SRAMs for 8×8 TPU)"
+    } else {
+        puts "⚠ Missing: RM_IHPSG13_1P_64x64"
     }
 }
 
@@ -384,8 +343,8 @@ if {[llength $sram_lef_files] == 0} {
     puts "  This will affect placement of SRAM macros"
 } else {
     set sram_lef_count 0
-    set sram_1024x64_lef 0
     set sram_256x64_lef 0
+    set sram_64x64_lef 0
     
     foreach file $sram_lef_files {
         if {[catch {read_lef $file} err]} {
@@ -395,11 +354,11 @@ if {[llength $sram_lef_files] == 0} {
             puts "  ✓ $fname"
             
             # Track specific TPU macro LEFs
-            if {[string match "*1024x64*" $fname]} {
-                incr sram_1024x64_lef
-            }
             if {[string match "*256x64*" $fname]} {
                 incr sram_256x64_lef
+            }
+            if {[string match "*64x64*" $fname]} {
+                incr sram_64x64_lef
             }
             
             incr sram_lef_count
@@ -407,8 +366,8 @@ if {[llength $sram_lef_files] == 0} {
     }
     puts ""
     puts "SRAM LEFs: $sram_lef_count files loaded"
-    puts "  - 1024×64 macros: $sram_1024x64_lef (input SRAMs)"
-    puts "  - 256×64 macros: $sram_256x64_lef (output SRAMs)"
+    puts "  - 256×64 macros: $sram_256x64_lef (input SRAMs)"
+    puts "  - 64×64 macros: $sram_64x64_lef (output SRAMs)"
 }
 
 puts ""
@@ -445,22 +404,22 @@ if {$lib_count < 20} {  ;# Only print if reasonable number
 puts ""
 puts "Verifying 8×8 TPU SRAM macros..."
 
-# Look for input SRAM macros (1024x64)
-set input_sram_cells [get_lib_cells */RM_IHPSG13_1P_1024x64* -quiet]
+# Look for input SRAM macros (256x64)
+set input_sram_cells [get_lib_cells */RM_IHPSG13_1P_256x64* -quiet]
 if {[llength $input_sram_cells] > 0} {
-    puts "✓ Found RM_IHPSG13_1P_1024x64 (input weights/activations)"
+    puts "✓ Found RM_IHPSG13_1P_256x64 (input weights/activations)"
     puts "  Variants: [llength $input_sram_cells]"
 } else {
-    puts "⚠ Missing RM_IHPSG13_1P_1024x64"
+    puts "⚠ Missing RM_IHPSG13_1P_256x64"
 }
 
-# Look for output SRAM macros (256x64)
-set output_sram_cells [get_lib_cells */RM_IHPSG13_1P_256x64* -quiet]
+# Look for output SRAM macros (64x64)
+set output_sram_cells [get_lib_cells */RM_IHPSG13_1P_64x64* -quiet]
 if {[llength $output_sram_cells] > 0} {
-    puts "✓ Found RM_IHPSG13_1P_256x64 (output accumulators A/B/C)"
+    puts "✓ Found RM_IHPSG13_1P_64x64 (output accumulators A/B/C)"
     puts "  Variants: [llength $output_sram_cells]"
 } else {
-    puts "⚠ Missing RM_IHPSG13_1P_256x64"
+    puts "⚠ Missing RM_IHPSG13_1P_64x64"
 }
 
 # Alternative patterns
@@ -562,13 +521,6 @@ if {[llength $sram_cells] > 0} {
 }
 puts "  ✓ Total libraries: $lib_count"
 puts ""
-if {[info exists matrix_size] && [info exists input_data_width]} {
-    puts "TPU Design Parameters:"
-    puts "  ✓ Array: ${matrix_size}×${matrix_size} (${elements_per_matrix} MACs)"
-    puts "  ✓ Input: INT${input_data_width} (${bytes_per_input_matrix} bytes/matrix)"
-    puts "  ✓ Output: INT${output_data_width} (${bytes_per_output_matrix} bytes/matrix)"
-    puts ""
-}
 puts "========================================="
 puts "PDK initialization complete!"
 puts "Ready for netlist read and floorplanning"

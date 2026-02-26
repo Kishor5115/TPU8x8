@@ -7,14 +7,10 @@
 #   - Signal layers: Metal2–TopMetal1
 #   - Clock layers:  Metal2–TopMetal1
 #   - Conservative layer adjustments for SRAM pin congestion
-#   - Post-GR optimization skipped (causes OOM on SRAM nets)
+#   - Post-GR optimization (repair_design)
 #   - Direct global → detailed route flow
 #   - filler_placement REMOVED (segfaults with IO pad ring)
 # ============================================================
-
-# source config.tcl
-# source $SCRIPT_DIR/init_tech.tcl
-# read_db ${RESULT_DIR}/04_cts.odb
 
 read_sdc $SDC_FILE
 
@@ -36,6 +32,17 @@ set_global_routing_layer_adjustment Metal2-Metal3 0.30
 set_global_routing_layer_adjustment TopMetal1 0.20
 
 # ------------------------------------------------------------
+# Surgical Routing Blockages (Force router to use higher layers)
+# ------------------------------------------------------------
+# Block Metal2 in the exact 10µm hotspots where DRCs occur.
+puts "Adding surgical routing blockages on Metal2..."
+set block [ord::get_db_block]
+set tech [ord::get_db_tech]
+set m2 [$tech findLayer "Metal2"]
+odb::dbObstruction_create $block $m2 [ord::microns_to_dbu 600] [ord::microns_to_dbu 2228] [ord::microns_to_dbu 612] [ord::microns_to_dbu 2237]
+odb::dbObstruction_create $block $m2 [ord::microns_to_dbu 1410] [ord::microns_to_dbu 2072] [ord::microns_to_dbu 1411] [ord::microns_to_dbu 2073]
+
+# ------------------------------------------------------------
 # Global Route
 # ------------------------------------------------------------
 puts "\n--- Global Route ---"
@@ -53,10 +60,8 @@ puts "Global route completed in ${elapsed}s"
 # ------------------------------------------------------------
 # Design Repair (Slew, Capacitance, Fanout)
 # ------------------------------------------------------------
-# Performing repair_design after global route ensures that 
-# buffering and sizing account for global routing parasitics.
 puts "\n--- Design Repair ---"
-estimate_parasitics -global_routing
+estimate_parasitics -placement
 repair_design -verbose
 
 # Legalize any buffers inserted by repair_design

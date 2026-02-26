@@ -2,8 +2,8 @@
 // Module      : tpu_top
 // Description : TPU Hard Macro Top-Level — 8×8 Systolic Array with SRAM Macros
 // Technology  : IHP SG13G2 130nm
-// SRAM Macros : 2× RM_IHPSG13_1P_1024x64 (Weight + Data)
-//             : 6× RM_IHPSG13_1P_256x64   (Output Banks A/B/C)
+// SRAM Macros : 2× RM_IHPSG13_1P_256x64  (Weight + Data)
+//             : 6× RM_IHPSG13_1P_64x64   (Output Banks A/B/C)
 // Total SRAMs : 8
 // Author      : TPU Design Team
 // ============================================================================
@@ -12,12 +12,12 @@
 //   ┌──────────────────────────────────────────────────┐
 //   │                  SRAM Region                      │
 //   │  ┌────────────┐ ┌────────────┐                   │
-//   │  │ Weight SRAM │ │  Data SRAM │  (1024×64 each)  │
+//   │  │ Weight SRAM │ │  Data SRAM │  (256×64 each)   │
 //   │  └────────────┘ └────────────┘                   │
 //   │  ┌──────┐┌──────┐┌──────┐┌──────┐┌──────┐┌──────┐│
 //   │  │Out A0││Out A1││Out B0││Out B1││Out C0││Out C1││
 //   │  └──────┘└──────┘└──────┘└──────┘└──────┘└──────┘│
-//   │                 (256×64 each)                     │
+//   │                 (64×64 each)                      │
 //   ├──────────────────────────────────────────────────┤
 //   │              TPU Core Logic                       │
 //   │  ┌──────────────────────────────────────────┐    │
@@ -27,11 +27,11 @@
 //   └──────────────────────────────────────────────────┘
 //
 // Memory Map:
-//   Weight SRAM : 1024 × 64-bit = 8 KB  (holds 2× 32-bit weight banks)
-//   Data SRAM   : 1024 × 64-bit = 8 KB  (holds 2× 32-bit activation banks)
-//   Output A    : 2×256 × 64-bit = 4 KB (128-bit output, split into 2×64)
-//   Output B    : 2×256 × 64-bit = 4 KB
-//   Output C    : 2×256 × 64-bit = 4 KB
+//   Weight SRAM : 256 × 64-bit = 2 KB  (holds 2× 32-bit weight banks)
+//   Data SRAM   : 256 × 64-bit = 2 KB  (holds 2× 32-bit activation banks)
+//   Output A    : 2×64 × 64-bit = 1 KB (128-bit output, split into 2×64)
+//   Output B    : 2×64 × 64-bit = 1 KB
+//   Output C    : 2×64 × 64-bit = 1 KB
 //
 // ============================================================================
 
@@ -60,11 +60,11 @@ wire [SRAM_DATA_WIDTH-1:0] sram_rdata_w1;
 wire [SRAM_DATA_WIDTH-1:0] sram_rdata_d0;
 wire [SRAM_DATA_WIDTH-1:0] sram_rdata_d1;
 
-// Weight SRAM read addresses (2 ports × 10-bit)
+// Weight SRAM read addresses (2 ports × 10-bit from core, truncated to 8-bit)
 wire [9:0] sram_raddr_w0;
 wire [9:0] sram_raddr_w1;
 
-// Data SRAM read addresses (2 ports × 10-bit)
+// Data SRAM read addresses (2 ports × 10-bit from core, truncated to 8-bit)
 wire [9:0] sram_raddr_d0;
 wire [9:0] sram_raddr_d1;
 
@@ -86,23 +86,23 @@ wire [5:0]  sram_waddr_c;
 // ============================================================================
 // SRAM Data Bus Mapping
 // ============================================================================
-// Weight SRAM (1024×64): upper 32 bits → w1, lower 32 bits → w0
-// Data   SRAM (1024×64): upper 32 bits → d1, lower 32 bits → d0
-// Output SRAMs (256×64): 128-bit output split into 2× 64-bit SRAMs per bank
+// Weight SRAM (256×64): upper 32 bits → w1, lower 32 bits → w0
+// Data   SRAM (256×64): upper 32 bits → d1, lower 32 bits → d0
+// Output SRAMs (64×64): 128-bit output split into 2× 64-bit SRAMs per bank
 
 wire [63:0] sram_weight_rdata;      // Single 64-bit weight SRAM output
-wire [9:0]  sram_weight_addr;       // Shared address for weight SRAM
+wire [7:0]  sram_weight_addr;       // 8-bit address for 256-depth
 
 wire [63:0] sram_data_rdata;        // Single 64-bit data SRAM output
-wire [9:0]  sram_data_addr;         // Shared address for data SRAM
+wire [7:0]  sram_data_addr;         // 8-bit address for 256-depth
 
 // Output SRAMs: 2× 64-bit per bank (3 banks × 2 = 6 SRAMs)
 wire [63:0] sram_output_a_wdata [0:1];
 wire [63:0] sram_output_b_wdata [0:1];
 wire [63:0] sram_output_c_wdata [0:1];
-wire [7:0]  sram_output_addr_a;     // 8-bit for 256-depth
-wire [7:0]  sram_output_addr_b;
-wire [7:0]  sram_output_addr_c;
+wire [5:0]  sram_output_addr_a;     // 6-bit for 64-depth
+wire [5:0]  sram_output_addr_b;
+wire [5:0]  sram_output_addr_c;
 
 // ============================================================================
 // Address and Data Mapping — Weight SRAM
@@ -110,7 +110,8 @@ wire [7:0]  sram_output_addr_c;
 // 64-bit SRAM → [63:32] = w1, [31:0] = w0
 
 assign {sram_rdata_w1, sram_rdata_w0} = sram_weight_rdata;
-assign sram_weight_addr = sram_raddr_w0;  // w0 and w1 share same address
+// Truncate 10-bit core address to 8-bit for 256-depth SRAM
+assign sram_weight_addr = sram_raddr_w0[7:0];
 
 // ============================================================================
 // Address and Data Mapping — Data SRAM
@@ -118,7 +119,7 @@ assign sram_weight_addr = sram_raddr_w0;  // w0 and w1 share same address
 // 64-bit SRAM → [63:32] = d1, [31:0] = d0
 
 assign {sram_rdata_d1, sram_rdata_d0} = sram_data_rdata;
-assign sram_data_addr = sram_raddr_d0;    // d0 and d1 share same address
+assign sram_data_addr = sram_raddr_d0[7:0];
 
 // ============================================================================
 // Address and Data Mapping — Output SRAMs
@@ -134,9 +135,10 @@ assign sram_output_b_wdata[1] = sram_wdata_b[127:64];
 assign sram_output_c_wdata[0] = sram_wdata_c[63:0];
 assign sram_output_c_wdata[1] = sram_wdata_c[127:64];
 
-assign sram_output_addr_a = {2'b00, sram_waddr_a};  // Pad 6-bit to 8-bit
-assign sram_output_addr_b = {2'b00, sram_waddr_b};
-assign sram_output_addr_c = {2'b00, sram_waddr_c};
+// 6-bit address maps directly to 64-depth SRAM
+assign sram_output_addr_a = sram_waddr_a;
+assign sram_output_addr_b = sram_waddr_b;
+assign sram_output_addr_c = sram_waddr_c;
 
 // ============================================================================
 // TPU Core Instantiation
@@ -184,11 +186,11 @@ tpu_core #(
 
 // ============================================================================
 // INPUT SRAM — Weight Memory
-// 1× RM_IHPSG13_1P_1024x64_c2_bm_bist
+// 1× RM_IHPSG13_1P_256x64_c2_bm_bist
 // Holds 2× 32-bit weight banks (w0, w1) packed into 64-bit word
 // ============================================================================
 
-RM_IHPSG13_1P_1024x64_c2_bm_bist u_sram_weight (
+RM_IHPSG13_1P_256x64_c2_bm_bist u_sram_weight (
     // Clock
     .A_CLK      (clk),
 
@@ -198,7 +200,7 @@ RM_IHPSG13_1P_1024x64_c2_bm_bist u_sram_weight (
     .A_REN      (1'b1),                 // Read enable — active
 
     // Address and data
-    .A_ADDR     (sram_weight_addr),     // 10-bit address
+    .A_ADDR     (sram_weight_addr),     // 8-bit address
     .A_DIN      (64'b0),               // No write data (read-only)
     .A_DLY      (1'b0),                // No delay
     .A_DOUT     (sram_weight_rdata),   // 64-bit read data
@@ -210,18 +212,18 @@ RM_IHPSG13_1P_1024x64_c2_bm_bist u_sram_weight (
     .A_BIST_MEN (1'b0),
     .A_BIST_WEN (1'b0),
     .A_BIST_REN (1'b0),
-    .A_BIST_ADDR(10'b0),
+    .A_BIST_ADDR(8'b0),
     .A_BIST_DIN (64'b0),
     .A_BIST_BM  (64'b0)
 );
 
 // ============================================================================
 // INPUT SRAM — Data/Activation Memory
-// 1× RM_IHPSG13_1P_1024x64_c2_bm_bist
+// 1× RM_IHPSG13_1P_256x64_c2_bm_bist
 // Holds 2× 32-bit activation banks (d0, d1) packed into 64-bit word
 // ============================================================================
 
-RM_IHPSG13_1P_1024x64_c2_bm_bist u_sram_data (
+RM_IHPSG13_1P_256x64_c2_bm_bist u_sram_data (
     // Clock
     .A_CLK      (clk),
 
@@ -231,7 +233,7 @@ RM_IHPSG13_1P_1024x64_c2_bm_bist u_sram_data (
     .A_REN      (1'b1),
 
     // Address and data
-    .A_ADDR     (sram_data_addr),
+    .A_ADDR     (sram_data_addr),       // 8-bit address
     .A_DIN      (64'b0),
     .A_DLY      (1'b0),
     .A_DOUT     (sram_data_rdata),
@@ -243,26 +245,26 @@ RM_IHPSG13_1P_1024x64_c2_bm_bist u_sram_data (
     .A_BIST_MEN (1'b0),
     .A_BIST_WEN (1'b0),
     .A_BIST_REN (1'b0),
-    .A_BIST_ADDR(10'b0),
+    .A_BIST_ADDR(8'b0),
     .A_BIST_DIN (64'b0),
     .A_BIST_BM  (64'b0)
 );
 
 // ============================================================================
 // OUTPUT SRAM — Bank A  (Result Storage)
-// 2× RM_IHPSG13_1P_256x64_c2_bm_bist
+// 2× RM_IHPSG13_1P_64x64_c2_bm_bist
 // 128-bit output split: [63:0] → SRAM0, [127:64] → SRAM1
 // ============================================================================
 
 genvar gi;
 generate
     for (gi = 0; gi < 2; gi = gi + 1) begin : output_a_srams
-        RM_IHPSG13_1P_256x64_c2_bm_bist u_sram_out_a (
+        RM_IHPSG13_1P_64x64_c2_bm_bist u_sram_out_a (
             .A_CLK      (clk),
             .A_MEN      (1'b1),
             .A_WEN      (~sram_write_enable_a0),    // Active-low write
             .A_REN      (1'b0),                     // Write-only
-            .A_ADDR     (sram_output_addr_a),       // 8-bit address
+            .A_ADDR     (sram_output_addr_a),       // 6-bit address
             .A_DIN      (sram_output_a_wdata[gi]),
             .A_DLY      (1'b0),
             .A_DOUT     (),                         // Not used (write-only)
@@ -273,7 +275,7 @@ generate
             .A_BIST_MEN (1'b0),
             .A_BIST_WEN (1'b0),
             .A_BIST_REN (1'b0),
-            .A_BIST_ADDR(8'b0),
+            .A_BIST_ADDR(6'b0),
             .A_BIST_DIN (64'b0),
             .A_BIST_BM  (64'b0)
         );
@@ -282,12 +284,12 @@ endgenerate
 
 // ============================================================================
 // OUTPUT SRAM — Bank B  (Result Storage)
-// 2× RM_IHPSG13_1P_256x64_c2_bm_bist
+// 2× RM_IHPSG13_1P_64x64_c2_bm_bist
 // ============================================================================
 
 generate
     for (gi = 0; gi < 2; gi = gi + 1) begin : output_b_srams
-        RM_IHPSG13_1P_256x64_c2_bm_bist u_sram_out_b (
+        RM_IHPSG13_1P_64x64_c2_bm_bist u_sram_out_b (
             .A_CLK      (clk),
             .A_MEN      (1'b1),
             .A_WEN      (~sram_write_enable_b0),
@@ -303,7 +305,7 @@ generate
             .A_BIST_MEN (1'b0),
             .A_BIST_WEN (1'b0),
             .A_BIST_REN (1'b0),
-            .A_BIST_ADDR(8'b0),
+            .A_BIST_ADDR(6'b0),
             .A_BIST_DIN (64'b0),
             .A_BIST_BM  (64'b0)
         );
@@ -312,12 +314,12 @@ endgenerate
 
 // ============================================================================
 // OUTPUT SRAM — Bank C  (Result Storage)
-// 2× RM_IHPSG13_1P_256x64_c2_bm_bist
+// 2× RM_IHPSG13_1P_64x64_c2_bm_bist
 // ============================================================================
 
 generate
     for (gi = 0; gi < 2; gi = gi + 1) begin : output_c_srams
-        RM_IHPSG13_1P_256x64_c2_bm_bist u_sram_out_c (
+        RM_IHPSG13_1P_64x64_c2_bm_bist u_sram_out_c (
             .A_CLK      (clk),
             .A_MEN      (1'b1),
             .A_WEN      (~sram_write_enable_c0),
@@ -333,7 +335,7 @@ generate
             .A_BIST_MEN (1'b0),
             .A_BIST_WEN (1'b0),
             .A_BIST_REN (1'b0),
-            .A_BIST_ADDR(8'b0),
+            .A_BIST_ADDR(6'b0),
             .A_BIST_DIN (64'b0),
             .A_BIST_BM  (64'b0)
         );

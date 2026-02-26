@@ -105,7 +105,10 @@ puts "    Unified Buffer: [format %.2f $activation_buffer_kb] KB"
 puts "    Output Buffer: [format %.2f $output_buffer_kb] KB"
 puts "    Total: [format %.2f $total_sram_kb] KB"
 puts ""
-puts "  NOTE: 8×8 TPU uses 8 SRAM macros (2 input + 6 output)"
+puts "  NOTE: 8×8 TPU uses 8 SRAM macros:"
+puts "        2× RM_IHPSG13_1P_256x64  (Weight + Data, 2 KB each)"
+puts "        6× RM_IHPSG13_1P_64x64   (Output Banks A/B/C × 2, 0.5 KB each)"
+puts "        Total SRAM: 7 KB"
 puts "        Actual flip-flops from synthesis: 2,816"
 puts ""
 
@@ -191,8 +194,8 @@ set STDCELL_AREA_MM2 [expr {$STDCELL_AREA / 1e6}]
 puts "  Density: [expr {$PLACE_DENSITY * 100}]%"
 puts "  Standard cell area: [format %.3f $STDCELL_AREA_MM2] mm²"
 
-set MACRO_HALO_X    5.0
-set MACRO_HALO_Y    5.0
+set MACRO_HALO_X    10.0
+set MACRO_HALO_Y    10.0
 
 puts "  Macro halo: ${MACRO_HALO_X} µm × ${MACRO_HALO_Y} µm"
 
@@ -358,9 +361,9 @@ puts "  FFs: $ESTIMATED_FF_COUNT"
 puts "  Power: ~${ESTIMATED_POWER_MW} mW"
 puts ""
 puts "Memory (SRAM macros):"
-puts "  2× RM_IHPSG13_1P_1024x64 (Weight + Data)"
-puts "  6× RM_IHPSG13_1P_256x64 (Output Banks A/B/C × 2)"
-puts "  Total: 8 SRAM macros"
+puts "  2× RM_IHPSG13_1P_256x64 (Weight + Data)"
+puts "  6× RM_IHPSG13_1P_64x64 (Output Banks A/B/C × 2)"
+puts "  Total: 8 SRAM macros (7 KB)"
 puts "========================================="
 puts ""
 puts "✓ Configuration complete"

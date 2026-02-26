@@ -143,18 +143,18 @@ set grid_x 0.48  ;# Metal1 x-pitch (site width)
 set grid_y 3.78  ;# Row height
 
 # Get SRAM macro dimensions
-set sram_1024_dims [getMacroDimensions "RM_IHPSG13_1P_1024x64_c2_bm_bist"]
-set sram_1024_w    [lindex $sram_1024_dims 0]
-set sram_1024_h    [lindex $sram_1024_dims 1]
-
 set sram_256_dims  [getMacroDimensions "RM_IHPSG13_1P_256x64_c2_bm_bist"]
 set sram_256_w     [lindex $sram_256_dims 0]
 set sram_256_h     [lindex $sram_256_dims 1]
 
+set sram_64_dims   [getMacroDimensions "RM_IHPSG13_1P_64x64_c2_bm_bist"]
+set sram_64_w      [lindex $sram_64_dims 0]
+set sram_64_h      [lindex $sram_64_dims 1]
+
 puts ""
 puts "SRAM Macro Dimensions:"
-puts "  1024×64: ${sram_1024_w} µm × ${sram_1024_h} µm"
-puts "  256×64:  ${sram_256_w} µm × ${sram_256_h} µm"
+puts "  256×64: ${sram_256_w} µm × ${sram_256_h} µm"
+puts "  64×64:  ${sram_64_w} µm × ${sram_64_h} µm"
 
 set halo_x $MACRO_HALO_X
 set halo_y $MACRO_HALO_Y
@@ -165,14 +165,13 @@ set core_w [expr {$core_ux - $core_lx}]
 set core_h [expr {$core_uy - $core_ly}]
 
 # ============================================================
-# Row 1 (TOP): 2× Input SRAMs (1024×64) — Weight & Data
+# Row 1 (TOP): 2× Input SRAMs (256×64) — Weight & Data
 # ============================================================
 # Place side-by-side, centered horizontally at top of core
-# These are the largest macros, placed closest to the top
 
-set input_block_w [expr {2 * $sram_1024_w + $gap}]
+set input_block_w [expr {2 * $sram_256_w + $gap}]
 set input_start_x [expr {$core_lx + ($core_w - $input_block_w) / 2.0}]
-set input_y       [expr {$core_uy - $halo_y - $sram_1024_h - 10.0}]
+set input_y       [expr {$core_uy - $halo_y - $sram_256_h - 10.0}]
 
 # Weight SRAM (left)
 set wx [snap_to_grid $input_start_x $grid_x]
@@ -182,11 +181,11 @@ puts "Placing Input SRAMs (Row 1 — Top)..."
 placeInstance "u_tpu_top/u_sram_weight" $wx $wy R0
 
 # Data SRAM (right)
-set dx [snap_to_grid [expr {$input_start_x + $sram_1024_w + $gap}] $grid_x]
+set dx [snap_to_grid [expr {$input_start_x + $sram_256_w + $gap}] $grid_x]
 placeInstance "u_tpu_top/u_sram_data" $dx $wy R0
 
 # ============================================================
-# Rows 2-4: 6× Output SRAMs (256×64) — 3 Banks × 2 each
+# Rows 2-4: 6× Output SRAMs (64×64) — 3 Banks × 2 each
 # ============================================================
 #   Row 2: Bank A — output_a[0], output_a[1]
 #   Row 3: Bank B — output_b[0], output_b[1]
@@ -195,7 +194,7 @@ placeInstance "u_tpu_top/u_sram_data" $dx $wy R0
 # Each row has 2 SRAMs centered, matching the input SRAM layout.
 # Dynamic lookup by cell type avoids Tcl escaping issues.
 
-# Find all 256×64 SRAM instances dynamically from the DB
+# Find all 64×64 SRAM instances dynamically from the DB
 puts ""
 puts "Discovering output SRAM instances from DB..."
 set block [ord::get_db_block]
@@ -204,7 +203,7 @@ set output_sram_insts {}
 foreach inst [$block getInsts] {
     set master [$inst getMaster]
     set master_name [$master getName]
-    if {[string match "RM_IHPSG13_1P_256x64*" $master_name]} {
+    if {[string match "RM_IHPSG13_1P_64x64*" $master_name]} {
         set inst_name [$inst getName]
         lappend output_sram_insts $inst_name
         puts "  Found: $inst_name"
@@ -218,20 +217,20 @@ puts "  Total: $num_output_srams (expected 6)"
 set output_sram_insts [lsort $output_sram_insts]
 
 # Layout: 3 rows of 2, centered horizontally
-set out_pair_w [expr {2 * $sram_256_w + $gap}]
+set out_pair_w [expr {2 * $sram_64_w + $gap}]
 set out_start_x [expr {$core_lx + ($core_w - $out_pair_w) / 2.0}]
 set row_gap [expr {$halo_y + 10.0}]  ;# vertical gap between rows
 
 puts ""
 puts "Placing Output SRAMs (3 rows × 2, below inputs)..."
-set current_y [expr {$wy - $halo_y - $sram_256_h - $gap}]
+set current_y [expr {$wy - $halo_y - $sram_64_h - $gap}]
 
 for {set i 0} {$i < $num_output_srams} {incr i} {
     set row [expr {$i / 2}]     ;# 0, 0, 1, 1, 2, 2
     set col [expr {$i % 2}]     ;# 0, 1, 0, 1, 0, 1
     
-    set y_pos [expr {$current_y - $row * ($sram_256_h + $row_gap)}]
-    set x_pos [expr {$out_start_x + $col * ($sram_256_w + $gap)}]
+    set y_pos [expr {$current_y - $row * ($sram_64_h + $row_gap)}]
+    set x_pos [expr {$out_start_x + $col * ($sram_64_w + $gap)}]
     
     set ox [snap_to_grid $x_pos $grid_x]
     set oy [snap_to_grid $y_pos $grid_y]
@@ -241,11 +240,41 @@ for {set i 0} {$i < $num_output_srams} {incr i} {
 }
 
 # ============================================================
-# Placement Blockage (optional — keep std cells out of SRAM area)
+# Surgical Per-Instance Placement Blockages (3µm band)
 # ============================================================
-# Using halos from config (MACRO_HALO_X/Y) to keep cells away.
-# The area below the SRAMs is left open for systolic array logic.
+# Uses odb::dbBlockage_create — the same API as add_macro_blockage
+# in floorplan_util.tcl. Creates a 3µm keep-out zone around each
+# output SRAM to prevent logic cells from crowding the pins.
 
+set halo_dbu [ord::microns_to_dbu 3.0]
+puts ""
+puts "Adding 3µm placement blockages around output SRAMs..."
+
+foreach inst_name $output_sram_insts {
+    set inst [$block findInst $inst_name]
+    if {$inst == "NULL"} { continue }
+    set bbox [$inst getBBox]
+    set xmin [$bbox xMin]
+    set ymin [$bbox yMin]
+    set xmax [$bbox xMax]
+    set ymax [$bbox yMax]
+
+    # Left band
+    odb::dbBlockage_create $block [expr {$xmin - $halo_dbu}] $ymin $xmin $ymax
+    # Right band
+    odb::dbBlockage_create $block $xmax $ymin [expr {$xmax + $halo_dbu}] $ymax
+    # Bottom band
+    odb::dbBlockage_create $block [expr {$xmin - $halo_dbu}] [expr {$ymin - $halo_dbu}] [expr {$xmax + $halo_dbu}] $ymin
+    # Top band
+    odb::dbBlockage_create $block [expr {$xmin - $halo_dbu}] $ymax [expr {$xmax + $halo_dbu}] [expr {$ymax + $halo_dbu}]
+
+    puts "  ✓ $inst_name: 3µm placement blockage"
+}
+
+# ============================================================
+# Placement Blockage (std cells kept away by MACRO_HALO)
+# ============================================================
+# The area below the SRAMs is left open for systolic array logic.
 puts ""
 puts "SRAM placement complete."
 puts "  Logic area available below SRAMs for systolic array + control."
@@ -258,7 +287,7 @@ puts "  Bottom of core reserved for future SoC bus interface."
 set die_area [expr {$DIE_WIDTH * $DIE_HEIGHT}]
 set core_area [expr {$CORE_WIDTH * $CORE_HEIGHT}]
 
-set sram_area [expr {2 * $sram_1024_w * $sram_1024_h + 6 * $sram_256_w * $sram_256_h}]
+set sram_area [expr {2 * $sram_256_w * $sram_256_h + 6 * $sram_64_w * $sram_64_h}]
 set logic_area [expr {$core_area - $sram_area}]
 
 puts ""
@@ -272,10 +301,10 @@ puts "SRAM area:  [format %.0f $sram_area] µm² ([format %.3f [expr {$sram_area
 puts "Logic area: [format %.0f $logic_area] µm² ([format %.3f [expr {$logic_area / 1e6}]] mm²)"
 puts ""
 puts "Macros placed:"
-puts "  Row 1: u_sram_weight + u_sram_data (2× 1024×64)"
-puts "  Row 2: Bank A (2× 256×64)"
-puts "  Row 3: Bank B (2× 256×64)"
-puts "  Row 4: Bank C (2× 256×64)"
+puts "  Row 1: u_sram_weight + u_sram_data (2× 256×64)"
+puts "  Row 2: Bank A (2× 64×64)"
+puts "  Row 3: Bank B (2× 64×64)"
+puts "  Row 4: Bank C (2× 64×64)"
 puts "========================================="
 
 # Save checkpoint

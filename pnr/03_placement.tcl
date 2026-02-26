@@ -66,6 +66,16 @@ set_placement_padding -masters {RM_IHPSG13_1P_*} \
 set_dont_touch [get_cells -hierarchical -filter "ref_name =~ *sg13g2_IOPad* || ref_name =~ *sg13g2_Corner*"]
 
 # ------------------------------------------------------------
+# Surgical Placement Blockages (Keep logic cells away from SRAM corners)
+# ------------------------------------------------------------
+# These regions correspond to where routing congestion and pin
+# conflicts have consistently caused Metal2 spacing violations.
+puts "Adding surgical placement blockages near SRAM corners..."
+set block [ord::get_db_block]
+odb::dbBlockage_create $block [ord::microns_to_dbu 590] [ord::microns_to_dbu 2220] [ord::microns_to_dbu 620] [ord::microns_to_dbu 2245]
+odb::dbBlockage_create $block [ord::microns_to_dbu 1400] [ord::microns_to_dbu 2060] [ord::microns_to_dbu 1425] [ord::microns_to_dbu 2085]
+
+# ------------------------------------------------------------
 # Global Placement
 # ------------------------------------------------------------
 puts ""

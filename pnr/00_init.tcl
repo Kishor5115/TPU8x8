@@ -90,7 +90,7 @@ set inst_count [llength $all_insts]
 set sram_insts [get_cells -hierarchical * -filter {ref_name =~ RM_IHPSG13_1P_*} -quiet]
 set sram_count [llength $sram_insts]
 
-set sram_1024x64 [get_cells -hierarchical * -filter {ref_name =~ RM_IHPSG13_1P_1024x64*} -quiet]
+set sram_64x64 [get_cells -hierarchical * -filter {ref_name =~ RM_IHPSG13_1P_64x64*} -quiet]
 set sram_256x64 [get_cells -hierarchical * -filter {ref_name =~ RM_IHPSG13_1P_256x64*} -quiet]
 
 set all_nets [get_nets -hierarchical * -quiet]
@@ -102,7 +102,7 @@ set port_count [llength $all_ports]
 puts "  Instances (total): $inst_count"
 puts "  SRAM macros: $sram_count"
 if {$sram_count > 0} {
-    puts "    - 1024×64 (input): [llength $sram_1024x64]"
+    puts "    - 64×64 (input): [llength $sram_64x64]"
     puts "    - 256×64 (output): [llength $sram_256x64]"
 }
 puts "  Nets: $net_count"
@@ -121,20 +121,20 @@ if {$sram_count > 0} {
     puts "✓ Found $sram_count SRAM macros"
     puts ""
     puts "Expected for 8×8 TPU:"
-    puts "  - Input SRAMs: 2× RM_IHPSG13_1P_1024x64 (Weight + Data)"
+    puts "  - Input SRAMs: 2× RM_IHPSG13_1P_64x64 (Weight + Data)"
     puts "  - Output SRAMs (A): 2× RM_IHPSG13_1P_256x64"
     puts "  - Output SRAMs (B): 2× RM_IHPSG13_1P_256x64"
     puts "  - Output SRAMs (C): 2× RM_IHPSG13_1P_256x64"
     puts "  - Total: 8 macros"
     puts ""
     
-    if {[llength $sram_1024x64] == 2} {
+    if {[llength $sram_256x64] == 2} {
         puts "✓ Input SRAMs: Found exactly 2 (correct)"
     } else {
-        puts "⚠ Input SRAMs: Found [llength $sram_1024x64] (expected 2)"
+        puts "⚠ Input SRAMs: Found [llength $sram_64x64] (expected 2)"
     }
     
-    if {[llength $sram_256x64] == 6} {
+    if {[llength $sram_64x64] == 6} {
         puts "✓ Output SRAMs: Found exactly 6 (correct)"
     } else {
         puts "⚠ Output SRAMs: Found [llength $sram_256x64] (expected 6)"
@@ -232,7 +232,7 @@ puts "Design: $DESIGN (8×8 TPU - 64 MACs)"
 puts "  Instances: $inst_count"
 if {$sram_count > 0} {
     puts "  SRAM macros: $sram_count (2 input + 6 output expected)"
-    puts "    ✓ 1024×64: [llength $sram_1024x64] instances"
+    puts "    ✓ 64×64: [llength $sram_64x64] instances"
     puts "    ✓ 256×64: [llength $sram_256x64] instances"
 } else {
     puts "  ⚠ WARNING: No SRAM macros found!"
