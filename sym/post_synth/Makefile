@@ -20,13 +20,13 @@ PDK_FILES   = $(STDCELL_DIR)/sg13g2_stdcell.v \
               $(SRAM_DIR)/RM_IHPSG13_1P_256x64_c2_bm_bist.v \
               $(SRAM_DIR)/RM_IHPSG13_1P_64x64_c2_bm_bist.v
 
-# Testbench
-TB_FILE     = tpu_post_synth_tb.v
+# Testbench (Master TB from Pre-Synth)
+TB_FILE     = ../pre_synth/tpu_tb.v
 
 # Compiler flags
 IVERILOG    = iverilog
 VVP         = vvp
-DEFINES     = -DFUNCTIONAL
+DEFINES     = -DFUNCTIONAL -DGSR_NETLIST
 IFLAGS      = -g2012 $(DEFINES) -Wall
 
 # Output

@@ -16,6 +16,9 @@
 *.fsdb
 *.wdb
 *.log
+tpu_sim
+tpu_post_sim
+env.sh
 
 # ===============================
 # 🔹 OpenROAD / PnR Generated Files

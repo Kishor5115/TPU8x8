@@ -60,6 +60,24 @@ The implementation uses a professional RTL-to-GDSII flow:
 | **Technology** | IHP SG13G2 130nm |
 | **GDS Size** | 122 MB |
 
+## Simulation (Functional Verification)
+
+The project includes a master testbench for verifying matrix multiplication accuracy. See [VERIFICATION.md](sym/VERIFICATION.md) for a detailed guide.
+
+1.  **RTL Simulation (Pre-Synthesis)**:
+    ```bash
+    cd sym/pre_synth
+    make sim
+    ```
+    This verifies the hardware logic and provides a cycle-by-cycle **MAC Trace** for debugging internal math.
+
+2.  **Gate-Level Simulation (Post-Synthesis)**:
+    ```bash
+    cd sym/post_synth
+    make sim
+    ```
+    This verifies the final routed netlist against the same golden model.
+
 ## Getting Started
 To run the automated physical design flow:
 
