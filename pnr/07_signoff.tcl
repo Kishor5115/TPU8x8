@@ -1,5 +1,6 @@
+
 # ============================================================
-# Stage 7: Signoff (Final Verification, Reports & Output Files)
+#?  Stage 7: Signoff (Final Verification, Reports & Output Files)
 # ============================================================
 # Comprehensive signoff: timing analysis, DRC, output generation,
 # and professional summary report for tape-out readiness.
@@ -15,17 +16,20 @@ puts "╔═══════════════════════�
 puts "║              STAGE 7: SIGNOFF                            ║"
 puts "╚═══════════════════════════════════════════════════════════╝"
 
-# ══════════════════════════════════════════════════════════════
-# 1. PARASITIC EXTRACTION
-# ══════════════════════════════════════════════════════════════
+#===============================================================
+#               TODO : 1. Parasitic Extraction
+#===============================================================
+
 puts "\n━━━ 1. Parasitic Extraction ━━━"
 
 estimate_parasitics -placement
 puts "  Parasitic extraction complete (placement-based)"
 
-# ══════════════════════════════════════════════════════════════
-# 2. TIMING ANALYSIS (Typical Corner)
-# ══════════════════════════════════════════════════════════════
+
+#===============================================================
+#               TODO : 2. Timing Analysis (Typical Corner)
+#===============================================================
+
 puts "\n━━━ 2. Timing Analysis ━━━"
 
 puts "\n  ── Typical Corner (1.2V, 25°C) ──"
@@ -59,9 +63,11 @@ puts "  └──────────┴────────────
 # read_liberty -corner ss <slow_lib>
 # read_liberty -corner ff <fast_lib>
 
-# ══════════════════════════════════════════════════════════════
-# 3. CONSTRAINT COVERAGE
-# ══════════════════════════════════════════════════════════════
+
+#===============================================================
+#               TODO : 3. Constraint Coverage
+#===============================================================
+
 puts "\n━━━ 3. Constraint Coverage ━━━"
 
 puts "\n  ── Unconstrained Paths ──"
@@ -70,9 +76,11 @@ report_checks -unconstrained -fields {slew cap input nets fanout}
 puts "\n  ── Clock Skew ──"
 report_clock_skew
 
-# ══════════════════════════════════════════════════════════════
-# 4. POWER ANALYSIS
-# ══════════════════════════════════════════════════════════════
+
+#===============================================================
+#               TODO : 4. Power Analysis
+#===============================================================
+
 puts "\n━━━ 4. Power Analysis ━━━"
 
 catch {
@@ -80,9 +88,11 @@ catch {
     puts "  Power analysis complete"
 }
 
-# ══════════════════════════════════════════════════════════════
-# 5. DESIGN RULE CHECKS
-# ══════════════════════════════════════════════════════════════
+
+#===============================================================
+#               TODO : 5. Design Rule Checks
+#===============================================================
+
 puts "\n━━━ 5. Design Rule Checks ━━━"
 
 puts "\n  ── Placement Check ──"
@@ -93,9 +103,11 @@ catch {report_check_types -max_slew -max_capacitance -max_fanout -violators}
 
 puts "\n  NOTE: Final DRC/LVS must be run with Calibre, ICV, or KLayout"
 
-# ══════════════════════════════════════════════════════════════
-# 6. OUTPUT FILE GENERATION
-# ══════════════════════════════════════════════════════════════
+
+#===============================================================
+#               TODO : 6. Output File Generation
+#===============================================================
+
 puts "\n━━━ 6. Output File Generation ━━━"
 
 exec mkdir -p ${RESULT_DIR}
@@ -126,12 +138,14 @@ if {[info commands write_spef] != ""} {
     puts "    → ${RESULT_DIR}/${DESIGN}_final.spef"
 }
 
-puts "\n  GDSII: Generate with KLayout after signoff"
-puts "    Run: klayout -z -r generate_gds.py"
+  puts "\n  GDSII: Generate with KLayout after signoff"
+  puts "    Run: ./klayout/def2gds.sh"
 
-# ══════════════════════════════════════════════════════════════
-# 7. SIGNOFF REPORT GENERATION
-# ══════════════════════════════════════════════════════════════
+
+#===============================================================
+#               TODO : 7. Signoff Report Generation
+#===============================================================
+
 puts "\n━━━ 7. Generating Signoff Reports ━━━"
 
 exec mkdir -p ${REPORT_DIR}/signoff
@@ -166,9 +180,10 @@ catch {
 # (f) Power report
 catch {report_power -corner tt > ${REPORT_DIR}/signoff/power.rpt;          puts "    ✓ power.rpt"}
 
-# ══════════════════════════════════════════════════════════════
-# 8. PROFESSIONAL SIGNOFF SUMMARY
-# ══════════════════════════════════════════════════════════════
+
+#===============================================================
+#               TODO : 8. Professional Signoff Summary
+#===============================================================
 
 set timing_clean 1
 if {$tt_setup_wns < 0 || $tt_hold_wns < 0} {
@@ -250,7 +265,7 @@ puts $fp "━━━━━━━━━━━━━━━━━━━━━━━�
 puts $fp "  NEXT STEPS"
 puts $fp "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 puts $fp ""
-puts $fp "  1. Generate GDSII    :  klayout -z -r generate_gds.py"
+puts $fp "  1. Generate GDSII    :  ./klayout/def2gds.sh"
 puts $fp "  2. DRC Verification  :  Run DRC deck in KLayout / Calibre"
 puts $fp "  3. LVS Verification  :  Run LVS deck in KLayout / Calibre"
 puts $fp "  4. Tape-out          :  Submit GDSII when DRC & LVS are clean"
@@ -269,19 +284,23 @@ if {$timing_clean} {
 close $fp
 puts "    ✓ summary.rpt (Professional Signoff Summary)"
 
-# ══════════════════════════════════════════════════════════════
-# 9. SAVE FINAL CHECKPOINT
-# ══════════════════════════════════════════════════════════════
+
+#===============================================================
+#               TODO : 9. Save Final Checkpoint
+#===============================================================
+
 puts "\n━━━ 8. Saving Final Checkpoint ━━━"
 
 write_db ${RESULT_DIR}/07_signoff.odb
 puts "  Checkpoint: ${RESULT_DIR}/07_signoff.odb"
 
 # Layout image
-if {[info commands save_image] != ""} {
-    save_image ${REPORT_DIR}/signoff/layout_final.png
+if {[catch {save_image ${REPORT_DIR}/signoff/layout_final.png} err]} {
+    puts "⚠ WARNING: Could not save layout image"
+} else {
     puts "  Layout image: ${REPORT_DIR}/signoff/layout_final.png"
 }
+
 
 # ══════════════════════════════════════════════════════════════
 # FINAL CONSOLE SUMMARY
@@ -305,5 +324,5 @@ if {$timing_clean} {
 puts "╠═══════════════════════════════════════════════════════════╣"
 puts "║  Output files : ${RESULT_DIR}/"
 puts "║  Reports      : ${REPORT_DIR}/signoff/"
-puts "║  Next step    : klayout -z -r generate_gds.py            ║"
+puts "║  Next step    : ./klayout/def2gds.sh                     ║"
 puts "╚═══════════════════════════════════════════════════════════╝"

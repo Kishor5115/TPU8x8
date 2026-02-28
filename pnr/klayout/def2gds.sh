@@ -47,10 +47,12 @@ lef="$(find "$pdk_cells_lef_dir" -name 'sg13g2_stdcell.lef' -exec realpath {} \;
 pdk_cells_gds_dir="$pdk_dir/libs.ref/sg13g2_stdcell/gds"
 pdk_sram_gds_dir="$pdk_dir/libs.ref/sg13g2_sram/gds"
 pdk_io_gds_dir="$pdk_dir/libs.ref/sg13g2_io/gds"
+pdk_pad_gds_dir="$(realpath "../../ihp13/bondpad/gds")"
 
 gds="$(find "$pdk_cells_gds_dir" -name 'sg13g2_stdcell.gds' -exec realpath {} \;) \
      $(find "$pdk_sram_gds_dir" -name 'RM_IHPSG13*.gds' -exec realpath {} \;) \
-     $(find "$pdk_io_gds_dir" -name 'sg13g2_io.gds' -exec realpath {} \;)"
+     $(find "$pdk_io_gds_dir" -name 'sg13g2_io.gds' -exec realpath {} \;) \
+     $(find "$pdk_pad_gds_dir" -name 'bondpad_70x70.gds' -exec realpath {} \;)"
 
 ################
 ## Setup      ##

@@ -57,9 +57,22 @@ sim/
 out/
 
 # ===============================
+# 🔹 Environment & Shell Scripts
+# ===============================
+.env
+*.env
+env.sh
+.venv/
+
+# ===============================
+# 🔹 Generated Docs (keep .md only)
+# ===============================
+docs/*.html
+docs/*.pdf
+
+# ===============================
 # 🔹 Editors / OS
 # ===============================
 .vscode/
 .DS_Store
-yosys/tmp/
 yosys/tmp/

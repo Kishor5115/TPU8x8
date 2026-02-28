@@ -55,10 +55,11 @@ The implementation uses a professional RTL-to-GDSII flow:
 | Metric | Value |
 |--------|-------|
 | **Target Frequency** | 100 MHz (10ns period) |
-| **Logic Slack** | 0.000 ns (MET) |
-| **Die Size** | 2.1mm x 2.1mm |
+| **Current Performance**| 50 MHz (20ns period) |
+| **Logic Slack** | 8.937 ns (MET) |
+| **Die Size** | 2.8mm x 2.8mm |
 | **Technology** | IHP SG13G2 130nm |
-| **GDS Size** | 122 MB |
+| **GDS Size** | 127 MB |
 
 ## Simulation (Functional Verification)
 
@@ -77,6 +78,18 @@ The project includes a master testbench for verifying matrix multiplication accu
     make sim
     ```
     This verifies the final routed netlist against the same golden model.
+
+## View Implementation Reports
+The project includes a visualization tool that parses the implementation reports and generates a concise summary dashboard with automated insights and optimization recommendations.
+
+To generate the summary:
+```bash
+python3 scripts/report_viz.py
+```
+This will create/update `pnr/reports/SUMMARY.md`. You can view it in your Markdown viewer to see:
+- **Timing Status**: Setup and Hold slack.
+- **Congestion Issues**: Number of routing violations.
+- **Automated Insights**: Recommendations for clock frequency increases or area shrinkage.
 
 ## Getting Started
 To run the automated physical design flow:

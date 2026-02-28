@@ -2,7 +2,7 @@
 # IHP SG13G2 PDK Initialization
 # ============================================================
 
-source config.tcl
+# source config.tcl
 
 # PDK Paths
 set pdk_cells_lib ${PDK_DIR}/libs.ref/sg13g2_stdcell/lib
@@ -11,6 +11,7 @@ set pdk_sram_lib  ${PDK_DIR}/libs.ref/sg13g2_sram/lib
 set pdk_sram_lef  ${PDK_DIR}/libs.ref/sg13g2_sram/lef
 set pdk_io_lib    ${PDK_DIR}/libs.ref/sg13g2_io/lib
 set pdk_io_lef    ${PDK_DIR}/libs.ref/sg13g2_io/lef
+set pdk_pad_lef   ../ihp13/bondpad/lef
 
 puts "========================================="
 puts "Initializing IHP SG13G2 PDK"
@@ -321,6 +322,16 @@ if {[file exists $io_lef]} {
     puts "⚠ WARNING: IO cell LEF not found"
     puts "  Expected: $io_lef"
     puts "  Proceeding without IO cells"
+}
+
+# Bondpad LEF (for wire bonding)
+set bondpad_lef "${pdk_pad_lef}/bondpad_70x70.lef"
+if {[file exists $bondpad_lef]} {
+    read_lef $bondpad_lef
+    puts "✓ Loaded: [file tail $bondpad_lef]"
+} else {
+    puts "⚠ WARNING: Bondpad LEF not found"
+    puts "  Expected: $bondpad_lef"
 }
 
 puts ""

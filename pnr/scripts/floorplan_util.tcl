@@ -20,24 +20,15 @@ proc placeInstance {name x y orient} {
 }
 
 # ============================================================
-# place_corners — Place 4 corner cells at die corners
+# place_corners — Using OpenROAD's BUILT-IN place_corners
 # ============================================================
-proc place_corners {corner_cell_name} {
-    set dims [getMacroDimensions $corner_cell_name]
-    set w [lindex $dims 0]
-    set h [lindex $dims 1]
+# The built-in place_corners command automatically:
+#   1. Creates corner cell instances
+#   2. Places them at the four die corners
+#   3. Applies correct orientations based on LEF SYMMETRY
+# This matches the Croc SoC reference approach.
+# Do NOT override with a custom proc.
 
-    set block [ord::get_db_block]
-    set die_area [$block getDieArea]
-    set die_w [ord::dbu_to_microns [$die_area dx]]
-    set die_h [ord::dbu_to_microns [$die_area dy]]
-
-    puts "Placing corners ($corner_cell_name: ${w}×${h} µm)..."
-    placeInstance "corner_ll" 0 0 R0
-    placeInstance "corner_lr" [expr {$die_w - $w}] 0 R90
-    placeInstance "corner_ur" [expr {$die_w - $w}] [expr {$die_h - $h}] R180
-    placeInstance "corner_ul" 0 [expr {$die_h - $h}] R270
-}
 
 # ============================================================
 # add_macro_blockage — Create placement blockage between two macros

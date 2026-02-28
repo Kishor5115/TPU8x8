@@ -8,9 +8,9 @@ puts "Stage 0: Loading Design Netlist"
 puts "========================================="
 puts ""
 
-# ------------------------------------------------------------
-# Read Synthesized Netlist
-# ------------------------------------------------------------
+#=============================================================
+#               TODO :    READ Synthesized Netlist
+#=============================================================
 
 puts "Reading Verilog netlist..."
 puts "  File: $VERILOG_FILE"
@@ -26,9 +26,9 @@ read_verilog $VERILOG_FILE
 puts "  Size: [format %.2f $netlist_size_mb] MB"
 puts ""
 
-# ------------------------------------------------------------
-# Link Design
-# ------------------------------------------------------------
+#===============================================================
+#                TODO :   Link DESIGN
+#================================================================
 
 puts "Linking design: $DESIGN"
 link_design $DESIGN
@@ -36,9 +36,10 @@ link_design $DESIGN
 puts "  Design linked successfully"
 puts ""
 
-# ------------------------------------------------------------
-# Apply Dont_Use Constraints
-# ------------------------------------------------------------
+
+#===============================================================
+#               TODO : Apply Dont use constraits
+#================================================================
 
 if {[info exists DONT_USE] && [llength $DONT_USE] > 0} {
     puts "Applying dont_use constraints..."
@@ -49,9 +50,10 @@ if {[info exists DONT_USE] && [llength $DONT_USE] > 0} {
     puts ""
 }
 
-# ------------------------------------------------------------
-# Read SDC Timing Constraints
-# ------------------------------------------------------------
+
+#===============================================================
+#               TODO :  Read SDC Timing Constraints
+#================================================================
 
 puts "Reading SDC constraints..."
 puts "  File: $SDC_FILE"
@@ -73,15 +75,11 @@ if {![file exists $SDC_FILE]} {
 
 puts ""
 
-# ------------------------------------------------------------
-# Design Statistics
-# ------------------------------------------------------------
 
-puts "========================================="
-puts "Design Statistics"
-puts "========================================="
+#===============================================================
+#               TODO :  Design Statistics
+#================================================================
 
-# Count instances and cells
 set all_insts [get_cells -hierarchical * -quiet]
 set inst_count [llength $all_insts]
 
@@ -102,48 +100,45 @@ set port_count [llength $all_ports]
 puts "  Instances (total): $inst_count"
 puts "  SRAM macros: $sram_count"
 if {$sram_count > 0} {
-    puts "    - 64×64 (input): [llength $sram_64x64]"
-    puts "    - 256×64 (output): [llength $sram_256x64]"
+    puts "    - 256x64 (input): [llength $sram_256x64]"
+    puts "    - 64x64 (output): [llength $sram_64x64]"
 }
 puts "  Nets: $net_count"
 puts "  Ports: $port_count"
 puts ""
 
-# ------------------------------------------------------------
-# SRAM Macro Verification (Critical for 8×8 TPU)
-# ------------------------------------------------------------
 
-puts "========================================="
-puts "SRAM Macro Verification"
-puts "========================================="
+#===============================================================================
+#               TODO :  SRAM Macro Verification (Critical for 8×8 TPU)
+#==============================================================================
 
 if {$sram_count > 0} {
     puts "✓ Found $sram_count SRAM macros"
     puts ""
-    puts "Expected for 8×8 TPU:"
-    puts "  - Input SRAMs: 2× RM_IHPSG13_1P_64x64 (Weight + Data)"
-    puts "  - Output SRAMs (A): 2× RM_IHPSG13_1P_256x64"
-    puts "  - Output SRAMs (B): 2× RM_IHPSG13_1P_256x64"
-    puts "  - Output SRAMs (C): 2× RM_IHPSG13_1P_256x64"
+    puts "Expected for 8x8 TPU:"
+    puts "  - Input SRAMs: 2x RM_IHPSG13_1P_256x64 (Weight + Data)"
+    puts "  - Output SRAMs (A): 2x RM_IHPSG13_1P_64x64"
+    puts "  - Output SRAMs (B): 2x RM_IHPSG13_1P_64x64"
+    puts "  - Output SRAMs (C): 2x RM_IHPSG13_1P_64x64"
     puts "  - Total: 8 macros"
     puts ""
-    
+
     if {[llength $sram_256x64] == 2} {
         puts "✓ Input SRAMs: Found exactly 2 (correct)"
     } else {
-        puts "⚠ Input SRAMs: Found [llength $sram_64x64] (expected 2)"
+        puts "⚠ Input SRAMs: Found [llength $sram_256x64] (expected 2)"
     }
     
     if {[llength $sram_64x64] == 6} {
         puts "✓ Output SRAMs: Found exactly 6 (correct)"
     } else {
-        puts "⚠ Output SRAMs: Found [llength $sram_256x64] (expected 6)"
+        puts "⚠ Output SRAMs: Found [llength $sram_64x64] (expected 6)"
     }
-    
+
 } else {
     puts "⚠ ERROR: No SRAM macros found in design!"
     puts ""
-    puts "This is CRITICAL for 8×8 TPU:"
+    puts "This is CRITICAL for 8x8 TPU:"
     puts "  Design needs 8 SRAM macros to function"
     puts "  Missing macros will cause synthesis/place&route failures"
     puts ""
@@ -152,12 +147,11 @@ if {$sram_count > 0} {
     puts "  2. Verify PDK SRAM libraries are installed"
     puts "  3. Check init_tech.tcl for SRAM library loading errors"
 }
-
 puts ""
 
-# ------------------------------------------------------------
-# Timing Check
-# ------------------------------------------------------------
+#===============================================================
+#               TODO :   Timing Check
+#================================================================
 
 puts "========================================="
 puts "Initial Timing Analysis"
@@ -178,9 +172,9 @@ puts "Constraint Check:"
 check_setup -verbose
 puts ""
 
-# ------------------------------------------------------------
-# Design Hierarchy Summary
-# ------------------------------------------------------------
+#===============================================================
+#               TODO :   Design Hierarchy Summary
+#================================================================
 
 puts "========================================="
 puts "Design Hierarchy"
@@ -207,9 +201,34 @@ if {$clk_port eq ""} {
 
 puts ""
 
-# ------------------------------------------------------------
-# Save Checkpoint
-# ------------------------------------------------------------
+
+#===============================================================
+#               TODO :   Summary
+#================================================================
+
+puts "========================================="
+puts "Stage 0 Complete"
+puts "========================================="
+puts "Design: $DESIGN (8x8 TPU - 64 MACs)"
+puts "  Instances: $inst_count"
+if {$sram_count > 0} {
+    puts "  SRAM macros: $sram_count (2 input + 6 output expected)"
+    puts "    ✓ 256x64: [llength $sram_256x64] instances"
+    puts "    ✓ 64x64: [llength $sram_64x64] instances"
+} else {
+    puts "  ⚠ WARNING: No SRAM macros found!"
+    puts "    Expected: 8 SRAM macros for 8x8 TPU"
+}
+puts "  Nets: $net_count"
+puts "  Clock: ${CLK_FREQ_MHZ} MHz (${CLK_PERIOD} ns period)"
+puts ""
+puts "Next: Run 01_floorplan.tcl"
+puts "=============================================================================================="
+puts ""
+
+#===============================================================
+#               TODO :   Save Checkpoint
+#================================================================
 
 puts "========================================="
 puts "Saving Checkpoint"
@@ -220,28 +239,3 @@ write_db $checkpoint
 
 puts "  Saved: $checkpoint"
 puts ""
-
-# ------------------------------------------------------------
-# Summary
-# ------------------------------------------------------------
-
-puts "========================================="
-puts "Stage 0 Complete"
-puts "========================================="
-puts "Design: $DESIGN (8×8 TPU - 64 MACs)"
-puts "  Instances: $inst_count"
-if {$sram_count > 0} {
-    puts "  SRAM macros: $sram_count (2 input + 6 output expected)"
-    puts "    ✓ 64×64: [llength $sram_64x64] instances"
-    puts "    ✓ 256×64: [llength $sram_256x64] instances"
-} else {
-    puts "  ⚠ WARNING: No SRAM macros found!"
-    puts "    Expected: 8 SRAM macros for 8×8 TPU"
-}
-puts "  Nets: $net_count"
-puts "  Clock: ${CLK_FREQ_MHZ} MHz (${CLK_PERIOD} ns period)"
-puts ""
-puts "Next: Run 01_floorplan.tcl"
-puts "========================================="
-puts ""
-

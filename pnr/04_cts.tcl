@@ -1,5 +1,6 @@
+
 # ============================================================
-# 04_cts.tcl — Clock Tree Synthesis for 8×8 TPU
+#?  04_cts.tcl — Clock Tree Synthesis for 8×8 TPU
 # ============================================================
 #
 # Design: ~2816 FFs, single clock domain (clk_pad → clk_c → FFs)
@@ -11,10 +12,6 @@
 # buffering clock to SRAM A_CLK pins (ODB-0370 error).
 # ============================================================
 
-# source config.tcl
-# source $SCRIPT_DIR/init_tech.tcl
-# read_db ${RESULT_DIR}/03_placement.odb
-
 # Read updated SDC (dont_touch on SRAMs removed)
 read_sdc $SDC_FILE
 
@@ -22,16 +19,17 @@ puts ""
 puts "========================================="
 puts "Stage 4: Clock Tree Synthesis"
 puts "========================================="
+puts ""
 
-# ------------------------------------------------------------
-# Clear dont_touch on ALL instances
-# ------------------------------------------------------------
+#===============================================================
+#               TODO : Clear dont_touch on Instances
 # IO pads were marked dont_touch during placement to prevent
 # them from moving. CTS needs to trace clock through IO pad
 # (pad_clk) to reach internal clock net.
 # SRAMs were marked dont_touch in SDC — also needs clearing.
+#===============================================================
 
-puts "\n--- Selective Clearing of dont_touch flags ---"
+puts "Selective clearing of dont_touch flags..."
 set block [ord::get_db_block]
 set cleared_sram 0
 set cleared_clk 0
@@ -59,13 +57,16 @@ foreach inst [$block getInsts] {
         }
     }
 }
+
 puts "  Cleared dont_touch on: $cleared_sram SRAMs, $cleared_clk Clock Pad"
 puts "  Note: IO fillers and other pads remain protected."
+puts ""
 
-# ------------------------------------------------------------
-# Clock Verification
-# ------------------------------------------------------------
-puts "\n--- Clock Configuration ---"
+#===============================================================
+#               TODO : Clock Verification
+#===============================================================
+
+puts "Clock Configuration:"
 set all_clocks [all_clocks]
 
 if {[llength $all_clocks] == 0} {
@@ -100,9 +101,13 @@ foreach inst [$block getInsts] {
     }
 }
 puts "  Flip-flops: $ff_count"
+puts ""
 
-# Verify clock net fanout
-puts "\n--- Clock Net Analysis ---"
+#===============================================================
+#               TODO : Clock Net Analysis
+#===============================================================
+
+puts "Clock Net Analysis:"
 foreach net [$block getNets] {
     set iterm_count [llength [$net getITerms]]
     set net_name [$net getName]
@@ -110,13 +115,15 @@ foreach net [$block getNets] {
         puts "  Clock net '$net_name' has $iterm_count connections"
     }
 }
+puts ""
 
-# ------------------------------------------------------------
-# Wire RC Estimation
-# ------------------------------------------------------------
-# Values for IHP SG13G2 (estimated/safe defaults in pF/um and Ohms/um)
+#===============================================================
+#               TODO : Wire RC Estimation
+# Values for IHP SG13G2 (estimated/safe defaults)
 # C = ~0.2 fF/um = 0.0002 pF/um
 # R = ~0.5 Ohms/um
+#===============================================================
+
 set_wire_rc -layer Metal3 -resistance 0.5 -capacitance 0.0002
 set_wire_rc -layer Metal4 -resistance 0.5 -capacitance 0.0002
 set_wire_rc -layer Metal5 -resistance 0.5 -capacitance 0.0002
@@ -124,9 +131,13 @@ set_wire_rc -layer Metal5 -resistance 0.5 -capacitance 0.0002
 set_wire_rc -signal -layer Metal3
 set_wire_rc -clock  -layer Metal4
 
-# ------------------------------------------------------------
-# Clock Tree Synthesis
-# ------------------------------------------------------------
+puts "Wire RC estimation complete"
+puts ""
+
+#===============================================================
+#               TODO : Clock Tree Synthesis
+#===============================================================
+
 set cts_buffer_list [list \
     sg13g2_buf_4 \
     sg13g2_buf_8 \
@@ -135,7 +146,10 @@ set cts_buffer_list [list \
 
 set CTS_ROOT_BUF "sg13g2_buf_16"
 
-puts "\n--- Building Clock Tree ---"
+puts "Building Clock Tree..."
+puts "  Root buffer: $CTS_ROOT_BUF"
+puts "  Buffer list: $cts_buffer_list"
+
 set start_time [clock seconds]
 
 clock_tree_synthesis \
@@ -143,35 +157,40 @@ clock_tree_synthesis \
     -buf_list $cts_buffer_list
 
 set elapsed [expr {[clock seconds] - $start_time}]
-puts "CTS completed in ${elapsed}s"
+puts "  CTS completed in ${elapsed}s"
+puts ""
 
-# ------------------------------------------------------------
-# Post-CTS Legalization
-# ------------------------------------------------------------
-puts "\n--- Post-CTS Legalization ---"
+#===============================================================
+#               TODO : Post-CTS Legalization
+# remove_fillers required before detailed_placement (OpenROAD warning).
+# filler_placement deferred to 05_routing.tcl (segfault workaround).
+#===============================================================
+
+puts "Post-CTS Legalization..."
 set_propagated_clock [all_clocks]
 
-# NOTE: remove_fillers is required before detailed_placement (OpenROAD warning).
-# However, filler_placement CRASHES here with a segfault in placeRowFillers
-# when IO pad ring fillers are present (OpenROAD bug).
-# Solution: remove → legalize → defer filler re-insertion to routing stage.
+# remove → legalize → defer filler re-insertion to routing stage
 remove_fillers
 detailed_placement
 check_placement -verbose
-# filler_placement deferred to 05_routing.tcl (post-detailed-route)
 
-# ------------------------------------------------------------
-# Post-CTS Timing
-# ------------------------------------------------------------
-puts "\n========================================="
+puts "  Legalization complete (fillers deferred to routing)"
+puts ""
+
+#===============================================================
+#               TODO : Post-CTS Timing Analysis
+#===============================================================
+
+puts "========================================="
 puts "Post-CTS Timing Results"
 puts "========================================="
+puts ""
 
 estimate_parasitics -placement
 
 foreach clk $all_clocks {
     set clk_name [get_property $clk name]
-    puts "\nClock: $clk_name"
+    puts "Clock: $clk_name"
     report_clock_skew -clock $clk_name
     report_clock_skew -clock $clk_name -hold
 }
@@ -183,16 +202,26 @@ report_tns
 # Hold repair skipped — SRAM paths cause excessive violations
 # repair_timing -hold
 
-# ------------------------------------------------------------
-# Save Checkpoint
-# ------------------------------------------------------------
-puts "\n========================================="
+puts ""
+
+#===============================================================
+#               TODO : Save Checkpoint
+#===============================================================
+
+puts "========================================="
 puts "Stage 4 Complete"
 puts "========================================="
 
 write_db ${RESULT_DIR}/04_cts.odb
-puts "Saved: ${RESULT_DIR}/04_cts.odb"
+puts "Saved checkpoint: ${RESULT_DIR}/04_cts.odb"
 
-if {[info commands save_image] != ""} {
-    save_image ${REPORT_DIR}/04_cts.png
+if {[catch {save_image ${REPORT_DIR}/04_cts.png} err]} {
+    puts "⚠ WARNING: Could not save image"
+} else {
+    puts "Saved image: ${REPORT_DIR}/04_cts.png"
 }
+
+puts ""
+puts "Next: Run 05_routing.tcl (global + detailed routing)"
+puts "=============================================================================================="
+puts ""

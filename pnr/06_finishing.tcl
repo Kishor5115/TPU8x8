@@ -1,5 +1,6 @@
+
 # ============================================================
-# Stage 6: Finishing (Timing Check, Filler Insertion)
+#?  Stage 6: Finishing (Timing Check, Filler Insertion)
 # ============================================================
 # Post-route: verify timing, insert fillers, save final design.
 #
@@ -12,22 +13,26 @@
 # standalone causes issues with IO pads outside die area.
 # ============================================================
 
-# source config.tcl
-# source $SCRIPT_DIR/init_tech.tcl
-# read_db ${RESULT_DIR}/05_route.odb
-
 puts ""
 puts "========================================="
 puts "Stage 6: Finishing"
 puts "========================================="
+puts ""
 
-# ── Read SDC ─────────────────────────────────────────────────
+#===============================================================
+#               TODO : Read SDC
+#===============================================================
+
 read_sdc $SDC_FILE
 
-# ── Timing Snapshot ──────────────────────────────────────────
+
+#===============================================================
+#               TODO : Timing Snapshot
 # Use placement-based parasitics (routing data loaded from ODB
 # may not be accessible for estimate_parasitics -global_routing
 # when running standalone).
+#===============================================================
+
 puts "\n--- Timing Analysis ---"
 set_wire_rc -signal -layer Metal3
 set_wire_rc -clock  -layer Metal4
@@ -44,7 +49,11 @@ set hold_slack  [sta::worst_slack_cmd "min"]
 puts [format "\n  Setup WNS: %.3f ns" $setup_slack]
 puts [format "  Hold  WNS: %.3f ns" $hold_slack]
 
-# ── Setup Optimization (if needed) ───────────────────────────
+
+#===============================================================
+#               TODO : Setup Optimization (if needed)
+#===============================================================
+
 if {$setup_slack < 0} {
     puts "\n--- Setup Timing Repair ---"
     puts [format "  Setup violations: WNS = %.3f ns" $setup_slack]
@@ -62,7 +71,11 @@ if {$setup_slack < 0} {
     }
 }
 
-# ── Hold Report (skip repair — crashes on SRAM pins) ─────────
+
+#===============================================================
+#               TODO : Hold Report (skip repair — crashes on SRAM pins)
+#===============================================================
+
 if {$hold_slack < 0} {
     puts "\n--- Hold Timing ---"
     puts [format "  Hold WNS: %.3f ns" $hold_slack]
@@ -70,21 +83,34 @@ if {$hold_slack < 0} {
     puts "  SRAM hold violations are unfixable (hard macro internal timing)"
 }
 
+
 # ── Final Timing Numbers ─────────────────────────────────────
 set final_setup_wns [sta::worst_slack_cmd "max"]
 set final_hold_wns  [sta::worst_slack_cmd "min"]
 set final_setup_tns [sta::total_negative_slack_cmd "max"]
 set final_hold_tns  [sta::total_negative_slack_cmd "min"]
 
-# ── Placement Verification ───────────────────────────────────
+
+#===============================================================
+#               TODO : Placement Verification
+#===============================================================
+
 puts "\n--- Placement Verification ---"
 catch {check_placement -verbose}
 
-# ── Design Area ──────────────────────────────────────────────
+
+#===============================================================
+#               TODO : Design Area
+#===============================================================
+
 puts "\n--- Design Area ---"
 report_design_area
 
-# ── Generate Reports ─────────────────────────────────────────
+
+#===============================================================
+#               TODO : Generate Reports
+#===============================================================
+
 puts "\n--- Generating Reports ---"
 exec mkdir -p ${REPORT_DIR}
 
@@ -113,6 +139,7 @@ close $fp
 
 puts "  Reports written to ${REPORT_DIR}/"
 
+
 # ══════════════════════════════════════════════════════════════
 # SAVE CHECKPOINT BEFORE FILLER INSERTION
 # ══════════════════════════════════════════════════════════════
@@ -130,10 +157,17 @@ puts "\n--- Filler Cell Insertion ---"
 puts "  SKIPPED: filler_placement crashes with IO pad ring (OpenROAD bug)"
 puts "  Fillers can be added in KLayout post-export if needed"
 
-# ── Layout Image ─────────────────────────────────────────────
-if {[info commands save_image] != ""} {
-    save_image ${REPORT_DIR}/06_final.png
+
+#===============================================================
+#               TODO : Layout Image
+#===============================================================
+
+if {[catch {save_image ${REPORT_DIR}/06_final.png} err]} {
+    puts "⚠ WARNING: Could not save image"
+} else {
+    puts "Saved image: ${REPORT_DIR}/06_final.png"
 }
+
 
 # ── Console Summary ──────────────────────────────────────────
 puts ""

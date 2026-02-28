@@ -1,5 +1,6 @@
+
 # ============================================================
-# 05_routing.tcl — Global + Detailed Routing for 8×8 TPU
+#?  05_routing.tcl — Global + Detailed Routing for 8×8 TPU
 # ============================================================
 #
 # Design: 8 SRAM macros + ~2816 FFs, single clock domain
@@ -18,10 +19,12 @@ puts ""
 puts "========================================="
 puts "Stage 5: Routing"
 puts "========================================="
+puts ""
 
-# ------------------------------------------------------------
-# Wire RC & Routing Layer Setup
-# ------------------------------------------------------------
+#===============================================================
+#               TODO : Wire RC & Routing Layer Setup
+#===============================================================
+
 set_wire_rc -signal -layer Metal3
 set_wire_rc -clock  -layer Metal4
 
@@ -31,10 +34,18 @@ set_routing_layers -signal Metal2-TopMetal1 -clock Metal2-TopMetal1
 set_global_routing_layer_adjustment Metal2-Metal3 0.30
 set_global_routing_layer_adjustment TopMetal1 0.20
 
-# ------------------------------------------------------------
-# Surgical Routing Blockages (Force router to use higher layers)
-# ------------------------------------------------------------
-# Block Metal2 in the exact 10µm hotspots where DRCs occur.
+puts "Routing layers configured"
+puts "  Signal: Metal2-TopMetal1"
+puts "  Clock:  Metal2-TopMetal1"
+puts "  Adjustment: Metal2-Metal3 30%, TopMetal1 20%"
+puts ""
+
+#===============================================================
+#               TODO : Surgical Routing Blockages
+# Force router to use higher layers in Metal2 hotspots
+# where DRCs occur near SRAM macro corners.
+#===============================================================
+
 puts "Adding surgical routing blockages on Metal2..."
 set block [ord::get_db_block]
 set tech [ord::get_db_tech]
@@ -42,10 +53,14 @@ set m2 [$tech findLayer "Metal2"]
 odb::dbObstruction_create $block $m2 [ord::microns_to_dbu 600] [ord::microns_to_dbu 2228] [ord::microns_to_dbu 612] [ord::microns_to_dbu 2237]
 odb::dbObstruction_create $block $m2 [ord::microns_to_dbu 1410] [ord::microns_to_dbu 2072] [ord::microns_to_dbu 1411] [ord::microns_to_dbu 2073]
 
-# ------------------------------------------------------------
-# Global Route
-# ------------------------------------------------------------
-puts "\n--- Global Route ---"
+puts "  ✓ Metal2 blockages added at SRAM corners"
+puts ""
+
+#===============================================================
+#               TODO : Global Route
+#===============================================================
+
+puts "Running global route..."
 set start_time [clock seconds]
 
 global_route \
@@ -56,21 +71,27 @@ global_route \
 
 set elapsed [expr {[clock seconds] - $start_time}]
 puts "Global route completed in ${elapsed}s"
+puts ""
 
-# ------------------------------------------------------------
-# Design Repair (Slew, Capacitance, Fanout)
-# ------------------------------------------------------------
-puts "\n--- Design Repair ---"
+#===============================================================
+#               TODO : Design Repair (Slew, Cap, Fanout)
+#===============================================================
+
+puts "Repairing design violations..."
 estimate_parasitics -placement
 repair_design -verbose
 
 # Legalize any buffers inserted by repair_design
 detailed_placement
 
-# ------------------------------------------------------------
-# Detailed Route
-# ------------------------------------------------------------
-puts "\n--- Detailed Route ---"
+puts "Design repair complete"
+puts ""
+
+#===============================================================
+#               TODO : Detailed Route
+#===============================================================
+
+puts "Running detailed route..."
 set_thread_count 8
 set start_time [clock seconds]
 
@@ -83,20 +104,19 @@ detailed_route \
 
 set elapsed [expr {[clock seconds] - $start_time}]
 puts "Detailed route completed in ${elapsed}s"
+puts ""
 
-# ------------------------------------------------------------
-# NOTE: filler_placement REMOVED — causes OpenROAD segfault
+# filler_placement REMOVED — causes OpenROAD segfault
 # (Signal 11 in placeRowFillers with IO pad ring).
-# Tcl catch{} cannot trap C-level crashes.
-# Fillers are cosmetic for DRC — can be added in KLayout.
-# ------------------------------------------------------------
+# Fillers are cosmetic — can be added in KLayout.
 
 global_connect
 
-# ------------------------------------------------------------
-# Save Results FIRST (before reports, in case anything crashes)
-# ------------------------------------------------------------
-puts "\n========================================="
+#===============================================================
+#               TODO : Save Routed Design
+#===============================================================
+
+puts "========================================="
 puts "Saving Routed Design"
 puts "========================================="
 
@@ -105,11 +125,13 @@ puts "Saved: ${RESULT_DIR}/05_route.odb"
 
 write_def ${RESULT_DIR}/tpu_chip.def
 puts "Saved: ${RESULT_DIR}/tpu_chip.def"
+puts ""
 
-# ------------------------------------------------------------
-# Post-Route Reports
-# ------------------------------------------------------------
-puts "\n========================================="
+#===============================================================
+#               TODO : Post-Route Timing & DRC Reports
+#===============================================================
+
+puts "========================================="
 puts "Post-Route Timing"
 puts "========================================="
 
@@ -120,15 +142,19 @@ report_tns
 
 report_design_area
 
-# DRC summary
-puts "\n--- DRC Report ---"
-puts "  See: ${REPORT_DIR}/05_route_drc.rpt"
+puts ""
+puts "DRC Report: ${REPORT_DIR}/05_route_drc.rpt"
 
-if {[info commands save_image] != ""} {
-    save_image ${REPORT_DIR}/05_route.png
+if {[catch {save_image ${REPORT_DIR}/05_route.png} err]} {
+    puts "⚠ WARNING: Could not save image"
+} else {
+    puts "Saved image: ${REPORT_DIR}/05_route.png"
 }
 
-puts "\n========================================="
+puts ""
+puts "========================================="
 puts "Stage 5 Complete"
 puts "========================================="
 puts "  Next: Run 06_finishing.tcl"
+puts "=============================================================================================="
+puts ""

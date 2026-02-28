@@ -64,13 +64,50 @@ This resulted in the GDS size jumping from **1MB to 122MB**, confirming that the
 
 ---
 
+---
+
+## 6. The Bondpad Connection: Completing the Padring
+**The Challenge**:
+Initial floorplan iterations used logic ports (`place_pin`) at the die boundary. While functional for simulation, a real ASIC requires physical **bondpads** (70µm x 70µm Metal5 plates) to allow for wire-bonding to the leadframe. Placing these manually while maintaining consistent alignment to the IO pads was error-prone and risked DRC violations.
+
+**The Solution**:
+We integrated a dedicated bondpad placement stage in `01_floorplan.tcl`. By using `place_bondpad`, we automatically generated the physical Metal5 plates on top of each IO pad. This ensured that the top-level bterms were physically accessible for packaging and correctly mapped in the GDS hierarchy.
+
+---
+
+## 7. Duplicate Pin Conflict (DRT-0302)
+**The Challenge**:
+During the transition to the full padring, the detailed router (`DRT`) reported an `Unsupported multiple pins on bterm` error for the clock and reset ports. 
+- **Cause**: We were still using `place_pin` to define logical ports at the exact coordinates where the IO pads were already placed. Since the IO pad cell itself defines a physical pin for the signal, adding a second manual pin on the same net created a database conflict that the detailed router could not resolve.
+
+**The Solution**:
+We performed a cleanup of the floorplan logic in `01_floorplan.tcl`. We removed all `place_pin` calls for ports associated with a physical IO pad. This allowed the tool to rely solely on the IO pad's pin definition, clearing the `DRT-0302` error and allowing detailed routing to complete successfully.
+
+---
+
+## 8. Professional Flow Refactoring
+**The Challenge**:
+As the design complexity grew, the implementation scripts became difficult to maintain. They lacked consistent logging, were fragile in headless environments, and didn't follow professional EDA standards for readability.
+
+**The Solution**:
+We refactored all 8 stage scripts (00–07) to align with the **Croc SoC** reference style:
+- **`#?` Headers**: Applied to all scripts for VSCode "Better Comments" integration.
+- **`TODO :` Tags**: Integrated into section headers to clearly mark implementation objectives.
+- **Catch Blocks**: Wrapped all `save_image` calls to ensure the flow survives environments without a display buffer.
+- **Improved Scoping**: Resolved variable scope issues (e.g., `$SCRIPT_DIR`) to allow for modular execution of individual stages.
+
+---
+
 ## Summary of Surgical Interventions
 | Stage | Problem | Surgical Solution |
 |---|---|---|
 | **Floorplan** | Routing Deadlock | SRAM Downsizing + 10µm Peripheral Alignment |
+| **Floorplan** | Missing Physical Pins | Integrated `place_bondpad` for wire-bonding |
+| **Floorplan** | DRT-0302 Error | Removed redundant `place_pin` calls |
 | **Placement** | DRC "Whack-a-Mole" | `odb::dbBlockage_create` at macro corners |
 | **Finishing** | Buffer Explosion | Waived macro-interface hold violations |
 | **Routing** | Spacing DRC | `odb::dbObstruction_create` on M2 at specific coords |
 | **Output** | Empty Macros | `pya.Technology().load()` + GDS-First Merge Order |
+| **Workflow** | Script Fragility | Professional refactoring with `#?` headers and `catch` blocks |
 
 These challenges highlight that mastering the ASIC flow is not just about running scripts, but knowing when and how to "break" the automated flow to fix technology-specific edge cases.
