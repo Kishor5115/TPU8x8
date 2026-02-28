@@ -1,3 +1,3 @@
-.SUBCKT bondpad_70x70 pad
-*.PININFO pad:B
-.ENDS
+version https://git-lfs.github.com/spec/v1
+oid sha256:95b90d87642108a4242614b659802870ccec7c3ec17b9ad92cf2b9f85d868535
+size 48

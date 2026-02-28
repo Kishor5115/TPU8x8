@@ -1,0 +1,21 @@
+# Git LFS configuration for chip design files
+# Large binary and design files
+
+# GDS files (layout)
+*.gds filter=lfs diff=lfs merge=lfs -text
+# OpenROAD database files
+*.odb filter=lfs diff=lfs merge=lfs -text
+# Design exchange format
+*.def filter=lfs diff=lfs merge=lfs -text
+# Circuit description language
+*.cdl filter=lfs diff=lfs merge=lfs -text
+# Library exchange format
+*.lef filter=lfs diff=lfs merge=lfs -text
+# VCD waveform files (can be large)
+*.vcd filter=lfs diff=lfs merge=lfs -text
+# Generic binary files
+*.bin filter=lfs diff=lfs merge=lfs -text
+*.so filter=lfs diff=lfs merge=lfs -text
+*.o filter=lfs diff=lfs merge=lfs -text
+# Guide files (routing)
+*.guide filter=lfs diff=lfs merge=lfs -text

@@ -1,22 +1,3 @@
-*==========================================================================
-* Copyright 2024 IHP PDK Authors
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*    https://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* SPDX-License-Identifier: Apache-2.0
-*==========================================================================
-
-.SUBCKT res_topmetal1
-Rm1 net1 net2 $[res_topmetal1] 20k l=1u w=5u
-Rm2 net3 net4 res_topmetal1 \ l=1.5u w =5u
-Rm3 net5 net6 res_topmetal1 / length =1u width=6u
-.ENDS
+version https://git-lfs.github.com/spec/v1
+oid sha256:9710bcdc6b19895b69fff34ec923962d07c64ee7e055ece51460b0b94462a079
+size 936
