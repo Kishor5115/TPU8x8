@@ -209,8 +209,8 @@ report_worst_slack -max
 report_worst_slack -min
 report_tns
 
-# Hold repair skipped — SRAM paths cause excessive violations
-# repair_timing -hold
+# Hold repair
+repair_timing -hold
 
 puts ""
 
