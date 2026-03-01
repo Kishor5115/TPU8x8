@@ -53,7 +53,7 @@ set m2 [$tech findLayer "Metal2"]
 odb::dbObstruction_create $block $m2 [ord::microns_to_dbu 600] [ord::microns_to_dbu 2228] [ord::microns_to_dbu 612] [ord::microns_to_dbu 2237]
 odb::dbObstruction_create $block $m2 [ord::microns_to_dbu 1410] [ord::microns_to_dbu 2072] [ord::microns_to_dbu 1411] [ord::microns_to_dbu 2073]
 
-puts "  ✓ Metal2 blockages added at SRAM corners"
+puts "   Metal2 blockages added at SRAM corners"
 puts ""
 
 #===============================================================

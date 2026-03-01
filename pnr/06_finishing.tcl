@@ -148,14 +148,45 @@ write_db ${RESULT_DIR}/06_final.odb
 puts "  Saved: ${RESULT_DIR}/06_final.odb"
 
 # ══════════════════════════════════════════════════════════════
-# FILLER CELL INSERTION — SKIPPED (OpenROAD bug)
+# FILLER CELL INSERTION
 # ══════════════════════════════════════════════════════════════
-# filler_placement segfaults in placeRowFillers with IO pad rings.
-# This is an OpenROAD bug (Signal 11, odb::dbInst::getOrient).
-# Fillers can be added post-export in KLayout if needed for DRC.
+# Ensuring a clean slate before placement to avoid segfaults.
 puts "\n--- Filler Cell Insertion ---"
-puts "  SKIPPED: filler_placement crashes with IO pad ring (OpenROAD bug)"
-puts "  Fillers can be added in KLayout post-export if needed"
+puts "  Cleaning existing fillers/decaps..."
+set block [ord::get_db_block]
+set del_count 0
+foreach inst [$block getInsts] {
+    set mname [[$inst getMaster] getName]
+    if {[string match "sg13g2_fill_*" $mname] || [string match "sg13g2_decap_*" $mname]} {
+        odb::dbInst_destroy $inst
+        incr del_count
+    }
+}
+puts "  Deleted $del_count cells"
+detailed_placement
+
+set stdfill [list \
+    sg13g2_decap_8 \
+    sg13g2_decap_4 \
+    sg13g2_fill_8 \
+    sg13g2_fill_4 \
+    sg13g2_fill_2 \
+    sg13g2_fill_1 \
+]
+puts "  Using masters: $stdfill"
+
+if {[catch {
+    filler_placement $stdfill
+    global_connect
+    puts "   Filler placement complete"
+    
+    # Save checkpoint after successful filler insertion
+    write_db ${RESULT_DIR}/06_post_filler.odb
+    puts "  Checkpoint saved: ${RESULT_DIR}/06_post_filler.odb"
+} err]} {
+    puts "   WARNING: filler_placement failed: $err"
+    puts "  (If this persists, fillers can be added in KLayout)"
+}
 
 
 #===============================================================

@@ -170,7 +170,17 @@ puts "Post-CTS Legalization..."
 set_propagated_clock [all_clocks]
 
 # remove → legalize → defer filler re-insertion to routing stage
-remove_fillers
+puts "  Manually removing all filler and decap cells..."
+set del_count 0
+foreach inst [$block getInsts] {
+    set mname [[$inst getMaster] getName]
+    if {[string match "sg13g2_fill_*" $mname] || [string match "sg13g2_decap_*" $mname]} {
+        odb::dbInst_destroy $inst
+        incr del_count
+    }
+}
+puts "  Deleted $del_count cells (fillers + decaps)"
+
 detailed_placement
 check_placement -verbose
 

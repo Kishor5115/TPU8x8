@@ -59,7 +59,9 @@ This resulted in the GDS size jumping from **1MB to 122MB**, confirming that the
 
 ## 5. Tool Friction & Environmental Bugs
 **Challenges**:
-- **IO Filler Segmentation Fault**: OpenROAD's `filler_placement` command crashes when used with an IO pad ring (`Signal 11: odb::dbInst::getOrient`). This is a known upstream bug. We had to waive filler insertion, which is acceptable for functional testing but would require manual intervention in KLayout for a production tapeout.
+- **IO Filler Segmentation Fault (FIXED)**: OpenROAD's `filler_placement` command would crash (`Signal 11: odb::dbInst::getOrient`) when walking rows with IO pad rings.
+- **The Cause**: Clock Tree Synthesis (`04_cts.tcl`) was leaving behind ~27,000 "phantom" decap cells that survived the standard `remove_fillers` command. These residual cells created an inconsistent site grid that caused the filler engine to crash.
+- **The Solution**: We implemented a **"Clean Slate" strategy**. Before running `filler_placement`, we use a manual Tcl loop to iterate through the database and explicitly `odb::dbInst_destroy` every instance matching `sg13g2_fill_*` or `sg13g2_decap_*`. Clearing these residual cells allowed the automated `filler_placement` to complete successfully with over 260k cells.
 - **Python 3.12 Compatibility**: The PDK's KLayout scripts rely on the deprecated `imp` module, causing `ModuleNotFoundError`. We had to bypass these library-level errors to complete the GDS export.
 
 ---
@@ -108,6 +110,7 @@ We refactored all 8 stage scripts (00–07) to align with the **Croc SoC** refer
 | **Finishing** | Buffer Explosion | Waived macro-interface hold violations |
 | **Routing** | Spacing DRC | `odb::dbObstruction_create` on M2 at specific coords |
 | **Output** | Empty Macros | `pya.Technology().load()` + GDS-First Merge Order |
+| **PnR Flow** | Filler Segfault | Manual "Clean Slate" removal of residual decap cells |
 | **Workflow** | Script Fragility | Professional refactoring with `#?` headers and `catch` blocks |
 
 These challenges highlight that mastering the ASIC flow is not just about running scripts, but knowing when and how to "break" the automated flow to fix technology-specific edge cases.

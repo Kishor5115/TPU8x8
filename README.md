@@ -111,7 +111,7 @@ To run the automated physical design flow:
     ```
 
 ## Development History
-See [CHALLENGES.md](CHALLENGES.md) for a detailed log of technical hurdles, including SRAM downsizing, hold violation repair, and surgical DRC fixes.
+See [CHALLENGES.md](/docs/CHALLENGES.md) for a detailed log of technical hurdles, including SRAM downsizing, hold violation repair, and surgical DRC fixes.
 
 ## Acknowledgments
 - **Google TPU Team**: For architectural inspiration.

@@ -273,7 +273,7 @@ puts "  Total: $num_output_srams instances (expected 6)"
 puts ""
 
 if {$num_output_srams != 6} {
-    puts "⚠ WARNING: Expected 6 output SRAMs, found $num_output_srams"
+    puts " WARNING: Expected 6 output SRAMs, found $num_output_srams"
 }
 
 # Sort for consistent order (A0, A1, B0, B1, C0, C1)
@@ -393,7 +393,7 @@ write_db $checkpoint
 puts "Saved checkpoint: $checkpoint"
 
 if {[catch {save_image ${REPORT_DIR}/01_floorplan.png} err]} {
-    puts "⚠ WARNING: Could not save floorplan image: $err"
+    puts " WARNING: Could not save floorplan image: $err"
 } else {
     puts "Saved floorplan image: ${REPORT_DIR}/01_floorplan.png"
 }

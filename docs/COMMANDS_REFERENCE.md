@@ -661,6 +661,31 @@ filler_placement $FILLER_CELLS
 |-----------|-------------|---------|
 | `<cell_list>` | Filler cell types (largest → smallest) | `sg13g2_fillcap_64 sg13g2_fillcap_16 sg13g2_fillcap_4 sg13g2_fill_1` |
 | Note: | Use in order of decreasing width | Fills gaps left-to-right |
+| **Best Practice** | **"Clean Slate" Strategy** | Always manually delete residual fillers/decaps (`dbInst_destroy`) before calling this command in designs with IO pad rings to avoid Signal 11 crashes. |
+
+---
+
+### Manual Filler/Decap Removal (Clean Slate)
+**Purpose:** Explicitly delete all filler and decap instances to ensure a clean site grid. Required as a workaround for OpenROAD `filler_placement` crashes when residual cells from CTS are present.
+```tcl
+set block [ord::get_db_block]
+set del_count 0
+foreach inst [$block getInsts] {
+    set mname [[$inst getMaster] getName]
+    if {[string match "sg13g2_fill_*" $mname] || [string match "sg13g2_decap_*" $mname]} {
+        odb::dbInst_destroy $inst
+        incr del_count
+    }
+}
+puts "  Deleted $del_count cells (fillers + decaps)"
+detailed_placement
+```
+| Parameter | Description |
+|-----------|-------------|
+| `sg13g2_fill_*` | Pattern for IHP standard filler cells |
+| `sg13g2_decap_*` | Pattern for IHP decap cells |
+| `odb::dbInst_destroy` | Direct OpenDB call to remove instance |
+| `detailed_placement` | Re-legalizes the grid after deletion |
 
 ---
 

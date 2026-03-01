@@ -39,7 +39,7 @@ puts ""
 
 #? CLK and time delay parameters
 # Target Frequency
-set CLK_PERIOD      10.0  ;# 100 MHz in ns  
+set CLK_PERIOD      20.0  ;# 100 MHz in ns  
 set CLK_PORT        clk_pad
 set CLK_FREQ_MHZ    [expr {1000.0 / $CLK_PERIOD}]
 
@@ -54,8 +54,8 @@ set AVAILABLE_LOGIC_TIME [expr {$CLK_PERIOD - $CLK_UNCERTAINTY}]
 puts "  Available for logic : ${AVAILABLE_LOGIC_TIME} ns"
 
 # Input/Output delay constraints
-set INPUT_DELAY_PCT  0.3    ;# 30% of clock period
-set OUTPUT_DELAY_PCT 0.3    ;# 30% of clock period
+set INPUT_DELAY_PCT  0.1    ;# 30% of clock period
+set OUTPUT_DELAY_PCT 0.1    ;# 30% of clock period
 
 set INPUT_DELAY  [expr {$CLK_PERIOD * $INPUT_DELAY_PCT}]
 set OUTPUT_DELAY [expr {$CLK_PERIOD * $OUTPUT_DELAY_PCT}]
@@ -92,7 +92,7 @@ puts ""
 
 # Weight / Data SRAM macros
 set IN_SRAM_DEPTH   256
-set IN_SRAM_WIDTH   64   ;# bits
+set IN_SRAM_WIDTH   64   ;# bits 
 
 # Output SRAM macros
 set OUT_SRAM_DEPTH  64
