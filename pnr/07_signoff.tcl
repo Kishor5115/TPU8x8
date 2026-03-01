@@ -4,9 +4,20 @@
 # ============================================================
 # Comprehensive signoff: timing analysis, DRC, output generation,
 # and professional summary report for tape-out readiness.
+#
+# Report generation pattern from:
+# github.com/pulp-platform/croc (openroad/scripts/reports.tcl)
 # ============================================================
 
 # source config.tcl
+
+# ── Helper: write to report file (append mode) ──────────────
+# Reference: Croc SoC reports.tcl report_puts
+proc report_puts { filename out } {
+    set fileId [open $filename a]
+    puts $fileId $out
+    close $fileId
+}
 # read_db ${RESULT_DIR}/06_final.odb
 
 read_sdc $SDC_FILE
@@ -34,7 +45,7 @@ puts "\n━━━ 2. Timing Analysis ━━━"
 
 puts "\n  ── Typical Corner (1.2V, 25°C) ──"
 report_checks -path_delay min_max \
-    -fields {slew cap input nets fanout} \
+    -fields {slew cap input fanout} \
     -digits 4 \
     -format full_clock_expanded
 
@@ -71,7 +82,7 @@ puts "  └──────────┴────────────
 puts "\n━━━ 3. Constraint Coverage ━━━"
 
 puts "\n  ── Unconstrained Paths ──"
-report_checks -unconstrained -fields {slew cap input nets fanout}
+report_checks -unconstrained -fields {slew cap input fanout}
 
 puts "\n  ── Clock Skew ──"
 report_clock_skew
@@ -144,6 +155,8 @@ if {[info commands write_spef] != ""} {
 
 #===============================================================
 #               TODO : 7. Signoff Report Generation
+# Pattern: Croc SoC reports.tcl — use >> for append, report_puts
+# for stdout-only commands, ODB API for area computation.
 #===============================================================
 
 puts "\n━━━ 7. Generating Signoff Reports ━━━"
@@ -151,34 +164,113 @@ puts "\n━━━ 7. Generating Signoff Reports ━━━"
 exec mkdir -p ${REPORT_DIR}/signoff
 
 # (a) Final timing report
-catch {
-    report_checks -path_delay min_max \
-        -fields {slew cap input nets fanout} \
-        -digits 4 \
-        -format full_clock_expanded \
-        > ${REPORT_DIR}/signoff/timing_final.rpt
-    puts "    ✓ timing_final.rpt"
-}
+set rpt_file ${REPORT_DIR}/signoff/timing_final.rpt
+set fileId [open $rpt_file w]; close $fileId
+report_puts $rpt_file "=========================================================================="
+report_puts $rpt_file "signoff report_checks -path_delay min"
+report_puts $rpt_file "--------------------------------------------------------------------------"
+report_checks -path_delay min -fields {slew cap input fanout} -digits 4 -format full_clock_expanded >> $rpt_file
+report_puts $rpt_file "\n=========================================================================="
+report_puts $rpt_file "signoff report_checks -path_delay max"
+report_puts $rpt_file "--------------------------------------------------------------------------"
+report_checks -path_delay max -fields {slew cap input fanout} -digits 4 -format full_clock_expanded >> $rpt_file
+puts "    ✓ timing_final.rpt"
 
 # (b) Clock reports
 catch {report_clock_skew > ${REPORT_DIR}/signoff/clock_skew.rpt;          puts "    ✓ clock_skew.rpt"}
 catch {report_clock_min_period > ${REPORT_DIR}/signoff/clock_period.rpt;   puts "    ✓ clock_period.rpt"}
 
-# (c) Area report
-catch {report_design_area > ${REPORT_DIR}/signoff/area.rpt;               puts "    ✓ area.rpt"}
+# (c) Area report — report_design_area only writes to stdout
+#     Use ODB API to compute area (reference: Croc SoC reports_area.tcl)
+puts "    Generating area report..."
+set rpt_file ${REPORT_DIR}/signoff/area.rpt
+if {[catch {
+    set db   [::ord::get_db]
+    set block [[$db getChip] getBlock]
+    set dbu_per_uu [expr double([[$db getTech] getDbUnitsPerMicron])]
 
-# (d) Unconstrained paths
-catch {report_checks -unconstrained > ${REPORT_DIR}/signoff/unconstrained.rpt; puts "    ✓ unconstrained.rpt"}
+    set die_bbox  [$block getDieArea]
+    set die_area  [expr {[$die_bbox dx] * [$die_bbox dy] / ($dbu_per_uu * $dbu_per_uu)}]
+    set core_bbox [$block getCoreArea]
+    set core_area [expr {[$core_bbox dx] * [$core_bbox dy] / ($dbu_per_uu * $dbu_per_uu)}]
 
-# (e) Violation report
-catch {
-    report_check_types -max_slew -max_capacitance -max_fanout -violators \
-        > ${REPORT_DIR}/signoff/violations.rpt
-    puts "    ✓ violations.rpt"
+    # Count stdcell + macro area
+    set stdcell_area 0.0
+    set macro_area   0.0
+    set stdcell_count 0
+    set macro_count   0
+    foreach inst [$block getInsts] {
+        set master [$inst getMaster]
+        if {[$master isFiller]} continue
+        set inst_area [expr {[$master getWidth] * [$master getHeight] / ($dbu_per_uu * $dbu_per_uu)}]
+        if {[$master isBlock]} {
+            set macro_area [expr {$macro_area + $inst_area}]
+            incr macro_count
+        } else {
+            set stdcell_area [expr {$stdcell_area + $inst_area}]
+            incr stdcell_count
+        }
+    }
+
+    set total_active [expr {$stdcell_area + $macro_area}]
+    set util         [expr {$core_area > 0 ? $total_active / $core_area * 100.0 : 0.0}]
+    set stdcell_util [expr {($core_area - $macro_area) > 0 ? $stdcell_area / ($core_area - $macro_area) * 100.0 : 0.0}]
+
+    set fp [open $rpt_file w]
+    puts $fp "=========================================================================="
+    puts $fp "Design Area Summary"
+    puts $fp "=========================================================================="
+    puts $fp [format "Die Area:          %.2f um^2" $die_area]
+    puts $fp [format "Core Area:         %.2f um^2" $core_area]
+    puts $fp [format "Total Active Area: %.2f um^2" $total_active]
+    puts $fp [format "  Std Cell Area:   %.2f um^2  (%d instances)" $stdcell_area $stdcell_count]
+    puts $fp [format "  Macro Area:      %.2f um^2  (%d instances)" $macro_area $macro_count]
+    puts $fp ""
+    puts $fp [format "Core Utilization:       %.1f%%" $util]
+    puts $fp [format "Std Cell Utilization:   %.1f%%" $stdcell_util]
+    puts $fp "=========================================================================="
+    close $fp
+    puts "    ✓ area.rpt"
+} err]} {
+    puts "    ⚠ Area report failed: $err"
 }
 
-# (f) Power report
-catch {report_power -corner tt > ${REPORT_DIR}/signoff/power.rpt;          puts "    ✓ power.rpt"}
+# (d) Unconstrained paths
+catch {report_checks -unconstrained -fields {slew cap input fanout} > ${REPORT_DIR}/signoff/unconstrained.rpt; puts "    ✓ unconstrained.rpt"}
+
+# (e) Violation report
+set rpt_file ${REPORT_DIR}/signoff/violations.rpt
+set fileId [open $rpt_file w]; close $fileId
+report_puts $rpt_file "=========================================================================="
+report_puts $rpt_file "signoff report_check_types -max_slew -max_capacitance -max_fanout -violators"
+report_puts $rpt_file "--------------------------------------------------------------------------"
+catch {report_check_types -max_slew -max_capacitance -max_fanout -violators >> $rpt_file}
+report_puts $rpt_file "\n=========================================================================="
+report_puts $rpt_file "signoff max_slew_violation_count"
+report_puts $rpt_file "--------------------------------------------------------------------------"
+report_puts $rpt_file "max slew violation count [sta::max_slew_violation_count]"
+report_puts $rpt_file "\n=========================================================================="
+report_puts $rpt_file "signoff max_fanout_violation_count"
+report_puts $rpt_file "--------------------------------------------------------------------------"
+report_puts $rpt_file "max fanout violation count [sta::max_fanout_violation_count]"
+report_puts $rpt_file "\n=========================================================================="
+report_puts $rpt_file "signoff max_cap_violation_count"
+report_puts $rpt_file "--------------------------------------------------------------------------"
+report_puts $rpt_file "max cap violation count [sta::max_capacitance_violation_count]"
+puts "    ✓ violations.rpt"
+
+# (f) Power report — must specify -corner for multi-corner
+set rpt_file ${REPORT_DIR}/signoff/power.rpt
+set fileId [open $rpt_file w]; close $fileId
+report_puts $rpt_file "=========================================================================="
+report_puts $rpt_file "signoff report_power -corner tt"
+report_puts $rpt_file "--------------------------------------------------------------------------"
+catch {report_power -corner tt >> $rpt_file}
+report_puts $rpt_file "\n=========================================================================="
+report_puts $rpt_file "signoff report_power_metric -corner tt"
+report_puts $rpt_file "--------------------------------------------------------------------------"
+catch {report_power_metric -corner tt >> $rpt_file}
+puts "    ✓ power.rpt"
 
 
 #===============================================================

@@ -36,7 +36,7 @@ Rendered results are stored in **anti-diagonal order** in the output SRAMs.
 | Array Size | 8x8 (64 MACs) |
 | Data Width | 8-bit (INT8) |
 | Accumulator | 16-bit (INT16) |
-| Clock Domain | Single System Clock (100 MHz) |
+| Clock Domain | Single System Clock (50 MHz) |
 | Memory | 2x RM_IHPSG13_1P_256x64 (Weights/Input) |
 |        | 6x RM_IHPSG13_1P_64x64 (Output/Output Channels) |
 
@@ -49,17 +49,38 @@ The implementation uses a professional RTL-to-GDSII flow:
 4.  **Placement**: Surgical placement blockages near SRAM macro corners.
 5.  **CTS**: Clock Tree Synthesis using high-drive buffers.
 6.  **Routing**: Surgical Metal2 routing blockages to resolve spacing violations.
-7.  **Signoff**: 0.000ns slack achieved (Setup/Hold) and GDSII generation via KLayout.
+7.  **Signoff**: Comprehensive timing, power, and area analysis with automated report generation.
 
-## Implementation Results
+## Implementation Results (PPA)
+
+### Performance
 | Metric | Value |
 |--------|-------|
-| **Target Frequency** | 100 MHz (10ns period) |
-| **Current Performance**| 50 MHz (20ns period) |
-| **Logic Slack** | 8.937 ns (MET) |
-| **Die Size** | 2.8mm x 2.8mm |
-| **Technology** | IHP SG13G2 130nm |
-| **GDS Size** | 127 MB |
+| Target Frequency | 50 MHz (20 ns period) |
+| Setup Timing (WNS) | 0.000 ns ✅ PASS |
+| Hold Timing (WNS) | -0.002 ns ⚠️ FAIL |
+| Estimated Max Freq | ~87 MHz |
+
+### Power (Typical Corner: 1.20V, 25°C)
+| Component | Internal | Switching | Leakage | Total | % |
+|-----------|----------|-----------|---------|-------|---|
+| Sequential | 7.52 mW | 0.00 mW | 1.30 µW | 7.52 mW | 49.5% |
+| Combinational | 0.03 mW | 0.06 mW | 13.0 µW | 0.10 mW | 0.7% |
+| Clock | 5.94 mW | 1.64 mW | 1.12 µW | 7.58 mW | 49.8% |
+| Macro (SRAM) | — | — | 0.69 µW | 0.00 mW | 0.0% |
+| **Total** | **13.5 mW** | **1.70 mW** | **16.1 µW** | **15.2 mW** | **100%** |
+
+### Area
+| Metric | Value |
+|--------|-------|
+| Die Size | 2.8 mm × 2.8 mm (7.84 mm²) |
+| Core Area | 4.57 mm² |
+| Std Cell Area | 3.08 mm² (100,283 instances) |
+| Macro Area | 0.49 mm² (8 SRAM instances) |
+| Core Utilization | 78.1% |
+| Std Cell Utilization | 75.4% |
+| Technology | IHP SG13G2 130nm |
+| GDS Size | ~127 MB |
 
 ## Simulation (Functional Verification)
 
@@ -79,17 +100,17 @@ The project includes a master testbench for verifying matrix multiplication accu
     ```
     This verifies the final routed netlist against the same golden model.
 
-## View Implementation Reports
-The project includes a visualization tool that parses the implementation reports and generates a concise summary dashboard with automated insights and optimization recommendations.
+## View Signoff Reports
+All reports are located in `pnr/reports/signoff/`:
 
-To generate the summary:
-```bash
-python3 scripts/report_viz.py
-```
-This will create/update `pnr/reports/SUMMARY.md`. You can view it in your Markdown viewer to see:
-- **Timing Status**: Setup and Hold slack.
-- **Congestion Issues**: Number of routing violations.
-- **Automated Insights**: Recommendations for clock frequency increases or area shrinkage.
+| Report | File | Description |
+|--------|------|-------------|
+| Timing | `timing_final.rpt` | Setup/Hold path analysis |
+| Area | `area.rpt` | Die, core, stdcell, macro area |
+| Power | `power.rpt` | Power breakdown by component |
+| Violations | `violations.rpt` | DRV violations with counts |
+| Clock Skew | `clock_skew.rpt` | Clock network skew |
+| Summary | `summary.rpt` | Professional signoff summary |
 
 ## Getting Started
 To run the automated physical design flow:
