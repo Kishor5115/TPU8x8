@@ -2,7 +2,7 @@
 
 A high-performance 8x8 Systolic Array TPU designed for matrix multiplication, implemented as a complete ASIC flow targeting the **IHP SG13G2 130nm** technology.
 
-![Final Routed Layout](pnr/reports/signoff/layout_final.png)
+![Final Routed Layout](pnr/Pics/openroad_def.png)
 
 ## Overview
 This project implement an 8x8 matrix multiplication accelerator (TPU) from RTL to GDSII. It features a systolic array architecture optimized for throughput, integrated with high-density SRAM macros for weight and data storage.
