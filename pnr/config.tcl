@@ -39,7 +39,7 @@ puts ""
 
 #? CLK and time delay parameters
 # Target Frequency
-set CLK_PERIOD      20.0  ;# 100 MHz in ns  
+set CLK_PERIOD      10.0  ;# 100 MHz in ns  
 set CLK_PORT        clk_pad
 set CLK_FREQ_MHZ    [expr {1000.0 / $CLK_PERIOD}]
 

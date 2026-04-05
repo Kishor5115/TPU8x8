@@ -12,8 +12,8 @@
 # buffering clock to SRAM A_CLK pins (ODB-0370 error).
 # ============================================================
 
-# Read updated SDC (dont_touch on SRAMs removed)
-read_sdc $SDC_FILE
+# SDC is already loaded in Stage 0 and carried through the same OpenROAD session.
+# Avoid re-reading SDC here to prevent stale STA graph/state issues between placement and CTS.
 
 puts ""
 puts "========================================="
@@ -76,7 +76,7 @@ if {[llength $all_clocks] == 0} {
         set name [$bterm getName]
         if {[string match "*clk*" $name]} {
             puts "  Creating clock on port: $name"
-            create_clock -name clk -period 20.0 [get_ports $name]
+            create_clock -name clk -period $CLK_PERIOD [get_ports $name]
         }
     }
     set all_clocks [all_clocks]
@@ -210,7 +210,7 @@ report_worst_slack -min
 report_tns
 
 # Hold repair
-repair_timing -hold
+# repair_timing -hold -max_buffer_percent 70
 
 puts ""
 

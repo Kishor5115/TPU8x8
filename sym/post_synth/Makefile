@@ -6,6 +6,7 @@
 # Paths
 PNR_DIR     = ../../pnr/results
 PDK_BASE    = ../../ihp13/pdk/ihp-sg13g2/libs.ref
+BONDPAD_DIR = ../../ihp13/bondpad/verilog
 STDCELL_DIR = $(PDK_BASE)/sg13g2_stdcell/verilog
 IO_DIR      = $(PDK_BASE)/sg13g2_io/verilog
 SRAM_DIR    = $(PDK_BASE)/sg13g2_sram/verilog
@@ -16,6 +17,7 @@ NETLIST     = $(PNR_DIR)/tpu_chip_final.v
 # PDK Cell Libraries
 PDK_FILES   = $(STDCELL_DIR)/sg13g2_stdcell.v \
               $(IO_DIR)/sg13g2_io.v \
+			  $(BONDPAD_DIR)/bondpad_70x70.v \
               $(SRAM_DIR)/RM_IHPSG13_1P_core_behavioral_bm_bist.v \
               $(SRAM_DIR)/RM_IHPSG13_1P_256x64_c2_bm_bist.v \
               $(SRAM_DIR)/RM_IHPSG13_1P_64x64_c2_bm_bist.v
@@ -31,7 +33,7 @@ IFLAGS      = -g2012 $(DEFINES) -Wall
 
 # Output
 SIM_OUT     = tpu_post_sim
-VCD_FILE    = tpu_post_synth.vcd
+VCD_FILE    = tpu_master.vcd
 
 # ============================================================================
 # Targets

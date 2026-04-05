@@ -22,7 +22,7 @@ module tpu_tb;
     parameter SRAM_DATA_WIDTH   = 32;
     parameter DATA_WIDTH        = 8;
     parameter OUTPUT_DATA_WIDTH = 16;
-    parameter CLK_PERIOD        = 20;
+    parameter CLK_PERIOD        = 10;
 
     // Toggle this to see cycle-by-cycle MAC math in the log
     parameter ENABLE_MAC_TRACE  = 1; 
@@ -37,9 +37,19 @@ module tpu_tb;
     always #(CLK_PERIOD/2) clk = ~clk;
 
 `ifdef GSR_NETLIST
+    supply1 vdd;
+    supply0 vss;
+
     // Chip-level ports for Gate-level simulation
     tpu_chip u_dut (
-        .clk_pad(clk), .srstn_pad(srstn), .tpu_start_pad(tpu_start), .tpu_done_pad(tpu_done)
+        .clk_pad(clk),
+        .srstn_pad(srstn),
+        .tpu_start_pad(tpu_start),
+        .tpu_done_pad(tpu_done),
+        .\IO_CORNER_NORTH_WEST_INST.vdd_RING (vdd),
+        .\IO_CORNER_NORTH_WEST_INST.iovdd_RING (vdd),
+        .\IO_CORNER_NORTH_WEST_INST.vss_RING (vss),
+        .\IO_CORNER_NORTH_WEST_INST.iovss_RING (vss)
     );
 `else
     // RTL-level ports
@@ -70,6 +80,7 @@ module tpu_tb;
     // ========================================================================
     integer i, j, k;
     integer errors, test_errors, test_num, total_tests;
+    integer rand_seed;
 
     reg signed [7:0]  weight_matrix [0:7][0:7];
     reg signed [7:0]  data_matrix   [0:7][0:7];
@@ -223,7 +234,8 @@ module tpu_tb;
         );
         $display("============================================================\n");
 
-        errors = 0; total_tests = 3;
+        errors = 0; total_tests = 7;
+        rand_seed = 32'h1A2B3C4D;
 
         // Test 1: Identity
         test_num = 1;
@@ -244,6 +256,42 @@ module tpu_tb;
         // Test 3: All Zeros
         test_num = 3;
         for (i=0; i<8; i=i+1) for (j=0; j<8; j=j+1) begin weight_matrix[i][j] = 0; data_matrix[i][j] = 0; end
+        reset_dut; load_weight_sram; load_data_sram; compute_golden; golden_transform; run_tpu; verify_result;
+
+        // Test 4: Positive Saturation (force +32767 clamp)
+        test_num = 4;
+        for (i=0; i<8; i=i+1) for (j=0; j<8; j=j+1) begin
+            weight_matrix[i][j] = 127;
+            data_matrix[i][j] = 127;
+        end
+        reset_dut; load_weight_sram; load_data_sram; compute_golden; golden_transform; run_tpu; verify_result;
+
+        // Test 5: Negative Saturation (force -32768 clamp)
+        test_num = 5;
+        for (i=0; i<8; i=i+1) for (j=0; j<8; j=j+1) begin
+            weight_matrix[i][j] = 127;
+            data_matrix[i][j] = -128;
+        end
+        reset_dut; load_weight_sram; load_data_sram; compute_golden; golden_transform; run_tpu; verify_result;
+
+        // Test 6: Checkerboard signs (high cancellation / sign-mix case)
+        test_num = 6;
+        for (i=0; i<8; i=i+1) for (j=0; j<8; j=j+1) begin
+            weight_matrix[i][j] = ((i+j)%2==0) ? 127 : -128;
+            data_matrix[i][j] = ((i%2)==0) ? (j*7-28) : (28-j*7);
+        end
+        reset_dut; load_weight_sram; load_data_sram; compute_golden; golden_transform; run_tpu; verify_result;
+
+        // Test 7: Pseudo-random signed matrix (deterministic seed)
+        test_num = 7;
+        for (i=0; i<8; i=i+1) begin
+            for (j=0; j<8; j=j+1) begin
+                rand_seed = $random(rand_seed);
+                weight_matrix[i][j] = rand_seed[7:0];
+                rand_seed = $random(rand_seed);
+                data_matrix[i][j] = rand_seed[7:0];
+            end
+        end
         reset_dut; load_weight_sram; load_data_sram; compute_golden; golden_transform; run_tpu; verify_result;
 
         $display("\n============================================================");

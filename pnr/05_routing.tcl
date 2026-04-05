@@ -30,14 +30,14 @@ set_wire_rc -clock  -layer Metal4
 
 set_routing_layers -signal Metal2-TopMetal1 -clock Metal2-TopMetal1
 
-# Layer adjustments — reduce capacity on congested layers
-set_global_routing_layer_adjustment Metal2-Metal3 0.30
-set_global_routing_layer_adjustment TopMetal1 0.20
+# ORFS IHP SG13G2 baseline uses ~5% global adjustment across routing layers.
+# Keep this aligned with official platform behavior before applying local blockages.
+set_global_routing_layer_adjustment Metal2-TopMetal1 0.05
 
 puts "Routing layers configured"
 puts "  Signal: Metal2-TopMetal1"
 puts "  Clock:  Metal2-TopMetal1"
-puts "  Adjustment: Metal2-Metal3 30%, TopMetal1 20%"
+puts "  Adjustment: Metal2-TopMetal1 5% (ORFS IHP baseline)"
 puts ""
 
 #===============================================================
@@ -50,10 +50,20 @@ puts "Adding surgical routing blockages on Metal2..."
 set block [ord::get_db_block]
 set tech [ord::get_db_tech]
 set m2 [$tech findLayer "Metal2"]
+set m3 [$tech findLayer "Metal3"]
 odb::dbObstruction_create $block $m2 [ord::microns_to_dbu 600] [ord::microns_to_dbu 2228] [ord::microns_to_dbu 612] [ord::microns_to_dbu 2237]
 odb::dbObstruction_create $block $m2 [ord::microns_to_dbu 1410] [ord::microns_to_dbu 2072] [ord::microns_to_dbu 1411] [ord::microns_to_dbu 2073]
+odb::dbObstruction_create $block $m2 [ord::microns_to_dbu 1493.9] [ord::microns_to_dbu 2145.9] [ord::microns_to_dbu 1495.5] [ord::microns_to_dbu 2146.4]
+odb::dbObstruction_create $block $m2 [ord::microns_to_dbu 1543.2] [ord::microns_to_dbu 2219.1] [ord::microns_to_dbu 1547.5] [ord::microns_to_dbu 2219.5]
+odb::dbObstruction_create $block $m3 [ord::microns_to_dbu 1495.0] [ord::microns_to_dbu 2153.8] [ord::microns_to_dbu 1495.4] [ord::microns_to_dbu 2154.1]
+# DRC violations (05_route_drc.rpt):
+#   Metal2 spacing @ (605.665,2335.10)-(605.760,2335.30)
+#   Metal2 spacing @ (605.665,2338.88)-(605.760,2339.08)
+# Extended blockages with 0.15 µm margin on all sides to ensure full coverage.
+odb::dbObstruction_create $block $m2 [ord::microns_to_dbu 605.50] [ord::microns_to_dbu 2334.80] [ord::microns_to_dbu 606.00] [ord::microns_to_dbu 2335.60]
+odb::dbObstruction_create $block $m2 [ord::microns_to_dbu 605.50] [ord::microns_to_dbu 2338.60] [ord::microns_to_dbu 606.00] [ord::microns_to_dbu 2339.30]
 
-puts "   Metal2 blockages added at SRAM corners"
+puts "   Metal2 blockages added at SRAM corners (DRC-refined bbox)"
 puts ""
 
 #===============================================================
@@ -97,10 +107,25 @@ set start_time [clock seconds]
 
 detailed_route \
     -output_drc ${REPORT_DIR}/05_route_drc.rpt \
-    -droute_end_iter 40 \
+    -droute_end_iter 64 \
     -save_guide_updates \
     -clean_patches \
     -verbose 1
+
+if {[file exists ${REPORT_DIR}/05_route_drc.rpt] && [file size ${REPORT_DIR}/05_route_drc.rpt] > 0} {
+    puts "DRC violations remain after first detailed route pass; running cleanup pass..."
+    if {[catch {
+        detailed_route \
+            -output_drc ${REPORT_DIR}/05_route_drc.rpt \
+            -droute_end_iter 80 \
+            -save_guide_updates \
+            -clean_patches \
+            -verbose 1
+    } dr_retry_err]} {
+        puts "WARNING: cleanup detailed_route pass failed: $dr_retry_err"
+        puts "WARNING: Continuing flow with first-pass routed result."
+    }
+}
 
 set elapsed [expr {[clock seconds] - $start_time}]
 puts "Detailed route completed in ${elapsed}s"

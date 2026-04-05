@@ -183,6 +183,10 @@ else
   logger.info('flat  mode is enabled.')
 end
 
+# Multi-threading
+threads($num_threads.to_i) if $num_threads
+threads($thr.to_i) if $thr
+
 # === Tech Switches ===
 
 #================================================

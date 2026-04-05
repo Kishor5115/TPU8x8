@@ -124,15 +124,15 @@ if {$sram_count > 0} {
     puts ""
 
     if {[llength $sram_256x64] == 2} {
-        puts "✓ Input SRAMs: Found exactly 2 (correct)"
+        puts " Input SRAMs: Found exactly 2 (correct)"
     } else {
-        puts "⚠ Input SRAMs: Found [llength $sram_256x64] (expected 2)"
+        puts " Input SRAMs: Found [llength $sram_256x64] (expected 2)"
     }
     
     if {[llength $sram_64x64] == 6} {
         puts "✓ Output SRAMs: Found exactly 6 (correct)"
     } else {
-        puts "⚠ Output SRAMs: Found [llength $sram_64x64] (expected 6)"
+        puts " Output SRAMs: Found [llength $sram_64x64] (expected 6)"
     }
 
 } else {
@@ -213,10 +213,10 @@ puts "Design: $DESIGN (8x8 TPU - 64 MACs)"
 puts "  Instances: $inst_count"
 if {$sram_count > 0} {
     puts "  SRAM macros: $sram_count (2 input + 6 output expected)"
-    puts "    ✓ 256x64: [llength $sram_256x64] instances"
-    puts "    ✓ 64x64: [llength $sram_64x64] instances"
+    puts "     256x64: [llength $sram_256x64] instances"
+    puts "     64x64: [llength $sram_64x64] instances"
 } else {
-    puts "  ⚠ WARNING: No SRAM macros found!"
+    puts "   WARNING: No SRAM macros found!"
     puts "    Expected: 8 SRAM macros for 8x8 TPU"
 }
 puts "  Nets: $net_count"

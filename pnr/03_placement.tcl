@@ -88,6 +88,8 @@ puts "Adding surgical placement blockages near SRAM corners..."
 set block [ord::get_db_block]
 odb::dbBlockage_create $block [ord::microns_to_dbu 590] [ord::microns_to_dbu 2220] [ord::microns_to_dbu 620] [ord::microns_to_dbu 2245]
 odb::dbBlockage_create $block [ord::microns_to_dbu 1400] [ord::microns_to_dbu 2060] [ord::microns_to_dbu 1425] [ord::microns_to_dbu 2085]
+odb::dbBlockage_create $block [ord::microns_to_dbu 1488] [ord::microns_to_dbu 2142] [ord::microns_to_dbu 1502] [ord::microns_to_dbu 2156]
+odb::dbBlockage_create $block [ord::microns_to_dbu 1538] [ord::microns_to_dbu 2216] [ord::microns_to_dbu 1552] [ord::microns_to_dbu 2228]
 
 puts "  ✓ Blockages added at SRAM corners"
 puts ""

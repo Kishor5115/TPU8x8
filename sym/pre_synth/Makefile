@@ -33,7 +33,7 @@ IFLAGS      = -g2012 $(DEFINES) -Wall
 
 # Output
 SIM_OUT     = tpu_sim
-VCD_FILE    = tpu_pre_synth.vcd
+VCD_FILE    = tpu_master.vcd
 
 # ============================================================================
 # Targets
