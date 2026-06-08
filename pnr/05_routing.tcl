@@ -30,14 +30,14 @@ set_wire_rc -clock  -layer Metal4
 
 set_routing_layers -signal Metal2-TopMetal1 -clock Metal2-TopMetal1
 
-# ORFS IHP SG13G2 baseline uses ~5% global adjustment across routing layers.
-# Keep this aligned with official platform behavior before applying local blockages.
-set_global_routing_layer_adjustment Metal2-TopMetal1 0.05
+# Layer adjustments — reduce capacity on congested layers
+set_global_routing_layer_adjustment Metal2-Metal3 0.30
+set_global_routing_layer_adjustment TopMetal1 0.20
 
 puts "Routing layers configured"
 puts "  Signal: Metal2-TopMetal1"
 puts "  Clock:  Metal2-TopMetal1"
-puts "  Adjustment: Metal2-TopMetal1 5% (ORFS IHP baseline)"
+puts "  Adjustment: Metal2-Metal3 30%, TopMetal1 20%"
 puts ""
 
 #===============================================================
@@ -59,9 +59,11 @@ odb::dbObstruction_create $block $m3 [ord::microns_to_dbu 1495.0] [ord::microns_
 # DRC violations (05_route_drc.rpt):
 #   Metal2 spacing @ (605.665,2335.10)-(605.760,2335.30)
 #   Metal2 spacing @ (605.665,2338.88)-(605.760,2339.08)
+#   Metal2 spacing @ (605.665,2395.58)-(605.760,2395.78)
 # Extended blockages with 0.15 µm margin on all sides to ensure full coverage.
 odb::dbObstruction_create $block $m2 [ord::microns_to_dbu 605.50] [ord::microns_to_dbu 2334.80] [ord::microns_to_dbu 606.00] [ord::microns_to_dbu 2335.60]
 odb::dbObstruction_create $block $m2 [ord::microns_to_dbu 605.50] [ord::microns_to_dbu 2338.60] [ord::microns_to_dbu 606.00] [ord::microns_to_dbu 2339.30]
+odb::dbObstruction_create $block $m2 [ord::microns_to_dbu 605.50] [ord::microns_to_dbu 2395.30] [ord::microns_to_dbu 606.00] [ord::microns_to_dbu 2396.10]
 
 puts "   Metal2 blockages added at SRAM corners (DRC-refined bbox)"
 puts ""
@@ -120,7 +122,7 @@ if {[file exists ${REPORT_DIR}/05_route_drc.rpt] && [file size ${REPORT_DIR}/05_
             -droute_end_iter 80 \
             -save_guide_updates \
             -clean_patches \
-            -verbose 1
+            -verbose 1x
     } dr_retry_err]} {
         puts "WARNING: cleanup detailed_route pass failed: $dr_retry_err"
         puts "WARNING: Continuing flow with first-pass routed result."
@@ -131,9 +133,6 @@ set elapsed [expr {[clock seconds] - $start_time}]
 puts "Detailed route completed in ${elapsed}s"
 puts ""
 
-# filler_placement REMOVED — causes OpenROAD segfault
-# (Signal 11 in placeRowFillers with IO pad ring).
-# Fillers are cosmetic — can be added in KLayout.
 
 global_connect
 

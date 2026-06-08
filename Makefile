@@ -24,12 +24,14 @@ SIGNOFF_DIR   := $(PNR_DIR)/reports/signoff
 KLAYOUT_RPT_DIR := $(SIGNOFF_DIR)/klayout
 DRC_RDB       := $(KLAYOUT_RPT_DIR)/$(TOP)_drc.lyrdb
 DRC_LOG       := $(KLAYOUT_RPT_DIR)/$(TOP)_drc.log
+DRC_DENSITY   ?= false
+DRC_SANITY    ?= false
 LVS_RDB       := $(KLAYOUT_RPT_DIR)/$(TOP)_lvs.lvsdb
 LVS_LOG       := $(KLAYOUT_RPT_DIR)/$(TOP)_lvs.log
 LVS_NETLIST   := $(PNR_DIR)/results/$(TOP)_final.cdl
 LVS_EXTRACTED := $(PNR_DIR)/results/$(TOP)_extracted.cir
 
-.PHONY: help all env yosys pnr flow gds gds-only drc lvs-netlist lvs tapeout clean opt_yosys opt_pnr view-gds view-opt-gds
+.PHONY: help all env yosys pnr flow gds gds-only drc drc-full lvs-netlist lvs tapeout clean opt_yosys opt_pnr view-gds view-opt-gds
 
 help:
 	@echo ""
@@ -39,7 +41,8 @@ help:
 	@echo "  pnr          - Run OpenROAD PnR      (pnr/flow.tcl)"
 	@echo "  flow         - Alias for pnr"
 	@echo "  gds          - DEF→GDS via KLayout"
-	@echo "  drc          - KLayout DRC on final GDS"
+	@echo "  drc          - KLayout DRC (quick, density/sanity disabled)"
+	@echo "  drc-full     - KLayout DRC (full rule set incl. density/sanity)"
 	@echo "  lvs-netlist  - Generate CDL netlist from Verilog"
 	@echo "  lvs          - KLayout LVS"
 	@echo "  tapeout      - Full tapeout check (runs drc + lvs)"
@@ -116,9 +119,15 @@ drc:
 		-rd in_gds="$(abspath $(FINAL_GDS))" \
 		-rd cell="$(TOP)" \
 		-rd report_file="$(abspath $(DRC_RDB))" \
-		-rd log_file="$(abspath $(DRC_LOG))"
+		-rd log_file="$(abspath $(DRC_LOG))" \
+		-rd density=$(DRC_DENSITY) \
+		-rd sanityRules=$(DRC_SANITY)
 	@echo "DRC report: $(DRC_RDB)"
 	@echo "DRC log:    $(DRC_LOG)"
+	@echo "DRC switches: density=$(DRC_DENSITY), sanityRules=$(DRC_SANITY)"
+
+drc-full:
+	@$(MAKE) drc DRC_DENSITY=true DRC_SANITY=true
 
 lvs-netlist:
 	@source ./env.sh && cd $(PNR_DIR) && \

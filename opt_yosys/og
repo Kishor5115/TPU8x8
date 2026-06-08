@@ -1,8 +1,0 @@
-
- /----------------------------------------------------------------------------\
- |  yosys -- Yosys Open SYnthesis Suite                                       |
- |  Copyright (C) 2012 - 2025  Claire Xenia Wolf <claire@yosyshq.com>         |
- |  Distributed under an ISC-like license, type "license" to see terms        |
- \----------------------------------------------------------------------------/
- Yosys 0.60+70 (git sha1 8101c87fa, clang++ 18.1.8 -fPIC -O3)
-ERROR: Can't guess frontend for input file `log/opt_yosys.log' (missing -f option)!

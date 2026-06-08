@@ -177,7 +177,7 @@ puts ""
 # ============================================================ 
 
 puts "========================================="
-puts "Stage 2: SRAM Macro Placement"
+puts "Stage 1b: SRAM Macro Placement"
 puts "========================================="
 puts ""
 
@@ -307,7 +307,7 @@ puts ""
 # ---------------------------------------------------------------------------------------------------
 
 # ============================================================
-#        TODO  :  Placement Blockages (3µm Halo)
+#        TODO  :  Placement Blockages (8µm Halo)
 # ============================================================
 # Surgical per-instance blockages prevent standard cells from
 # crowding SRAM macro pins. Uses odb::dbBlockage_create API.
@@ -353,7 +353,7 @@ set sram_area [expr {2 * $sram_256_w * $sram_256_h + 6 * $sram_64_w * $sram_64_h
 set logic_area [expr {$core_area - $sram_area}]
 
 puts "========================================="
-puts "Stage 2 Complete: Floorplan Summary"
+puts "Stage 1b Complete: Floorplan Summary"
 puts "========================================="
 puts "Die Dimensions:"
 puts "  Size: ${DIE_WIDTH} µm × ${DIE_HEIGHT} µm"

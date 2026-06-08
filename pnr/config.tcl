@@ -313,8 +313,8 @@ puts "Clock Tree Synthesis:"
 # ============================================================
 
 set CTS_BUF_CELL    "sg13g2_buf_2"
-set CTS_ROOT_BUF    "sg13g2_buf_4"
-set CTS_BUF_CELLS   [list "sg13g2_buf_2" "sg13g2_buf_4"]
+set CTS_ROOT_BUF    "sg13g2_buf_16"
+set CTS_BUF_CELLS   [list "sg13g2_buf_4" "sg13g2_buf_8" "sg13g2_buf_16"]
 
 puts "  Root buffer                 : $CTS_ROOT_BUF"
 puts "  Tree buffers                : $CTS_BUF_CELLS"

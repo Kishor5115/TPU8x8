@@ -1,0 +1,8 @@
+
+# klayout library definition file
+
+__all__ = [ "tl", "db", "lib", "rdb", 
+            "QtCore", "QtGui", "QtNetwork", "QtSql", "QtWidgets", "QtDesigner", "QtUiTools",
+            "QtMultimedia", "QtPrintSupport", "QtSvg", "QtXmlPatterns", "QtXml", 
+            "lay" ]
+
