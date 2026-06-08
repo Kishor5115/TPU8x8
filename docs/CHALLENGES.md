@@ -1,6 +1,19 @@
 # Deep Dive: Technical Challenges in 8×8 TPU ASIC Implementation
 
+[![Back to README](https://img.shields.io/badge/←-Back_to_README-blue.svg)](../README.md)
+
 This document provides a detailed post-mortem of the engineering hurdles encountered during the RTL-to-GDSII flow for the 8×8 TPU on the IHP SG13G2 (130nm) process. It serves as a record of "surgical" EDA interventions required when automated flows fail.
+
+## Contents
+1. [The Congestion Crisis: SRAM Scaling & Routability](#1-the-congestion-crisis-sram-scaling--routability)
+2. [The Great Buffer Explosion: Hold Repair Disaster](#2-the-great-buffer-explosion-hold-repair-disaster)
+3. [The "Whack-a-Mole" DRC: Metal2 Spacing](#3-the-whack-a-mole-drc-metal2-spacing)
+4. [The GDS Merge Puzzle: Lost Hierarchy](#4-the-gds-merge-puzzle-lost-hierarchy)
+5. [Tool Friction & Environmental Bugs](#5-tool-friction--environmental-bugs)
+6. [The Bondpad Connection: Completing the Padring](#6-the-bondpad-connection-completing-the-padring)
+7. [Duplicate Pin Conflict (DRT-0302)](#7-duplicate-pin-conflict-drt-0302)
+8. [Professional Flow Refactoring](#8-professional-flow-refactoring)
+9. [Summary of Surgical Interventions](#summary-of-surgical-interventions)
 
 ---
 

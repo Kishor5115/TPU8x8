@@ -1,4 +1,15 @@
-//-----this module is for weiting data out------
+// ============================================================================
+// Module      : write_out
+// Description : Output de-multiplexer — routes quantized results to SRAM banks
+// Technology  : IHP SG13G2 130nm
+//
+// Collects the anti-diagonal output vector from the systolic array (after
+// quantization) and steers each beat into one of three 128-bit output SRAM
+// banks (A/B/C) based on `data_set` and `matrix_index`. Active-low write
+// enables (`sram_write_enable_*0` = 0 means write) and per-bank addresses are
+// registered through output flip-flops. The triangular fill/zero logic packs
+// partial anti-diagonals correctly across the two activation data sets.
+// ============================================================================
 
 module write_out#(
 	parameter ARRAY_SIZE = 8,

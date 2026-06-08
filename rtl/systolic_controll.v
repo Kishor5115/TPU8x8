@@ -1,4 +1,21 @@
-//-----controller for systolic array----
+// ============================================================================
+// Module      : systolic_controll
+// Description : Control FSM for the 8×8 systolic array
+// Technology  : IHP SG13G2 130nm
+//
+// Sequences the full matrix-multiply pass through four states:
+//   IDLE      → wait for tpu_start
+//   LOAD_DATA → issue first SRAM read address
+//   WAIT1     → pipeline/read-latency bubble
+//   ROLLING   → stream operands, drive cycle_num, emit write-enable + indices
+//
+// Generated control signals:
+//   addr_serial_num  — SRAM read-address sequence (0–127)
+//   cycle_num        — diagonal wavefront counter for systolic.v
+//   matrix_index     — anti-diagonal read-out selector
+//   data_set         — selects the active 4-row activation group
+//   tpu_done         — asserted when both data sets are complete
+// ============================================================================
 
 module systolic_controll#(
 	parameter ARRAY_SIZE = 8
@@ -6,20 +23,20 @@ module systolic_controll#(
 (
 	input clk,
 	input srstn,
-	input tpu_start,																//total enable signal
+	input tpu_start,																// global start enable
 	
 	output reg sram_write_enable,
 
-	//addr_sel
+	// addr_sel interface
 	output reg [6:0] addr_serial_num,
 
-	//systolic array
-	output reg alu_start,																//shift & multiplcation start
-	output reg [8:0] cycle_num,													//for systolic.v
-	output reg [5:0] matrix_index,													//index for write-out SRAM data
+	// systolic array interface
+	output reg alu_start,															// shift + multiply start
+	output reg [8:0] cycle_num,													// wavefront counter for systolic.v
+	output reg [5:0] matrix_index,													// output SRAM write index
 	output reg [1:0] data_set,
 
-	output reg tpu_done														//done signal
+	output reg tpu_done																// done flag
 );
 
 localparam IDLE = 3'd0, LOAD_DATA = 3'd1, WAIT1 = 3'd2, ROLLING = 3'd3;

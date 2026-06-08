@@ -1,18 +1,27 @@
-//-------do the address select for 32 queue, each queue size 32+32-1---
-
+// ============================================================================
+// Module      : addr_sel
+// Description : SRAM read-address generator for weight and data banks
+// Technology  : IHP SG13G2 130nm
+//
+// Translates the controller's linear `addr_serial_num` (0–127) into the four
+// read addresses required per cycle: two weight ports (w0/w1) and two data
+// ports (d0/d1). Ports w1/d1 are skewed by 4 entries to feed the lower half
+// (rows/cols 4–7) of the array. Addresses are registered to map cleanly onto
+// the SRAM input flip-flops; out-of-range cycles park the address at 127.
+// ============================================================================
 
 module addr_sel
 (
 	input clk,
-	input [6:0] addr_serial_num,							//max = 126, setting all of the addr127 = 0
-	
-	//sel for w0~w7
-	output reg [9:0] sram_raddr_w0,			//queue 0~3
-	output reg [9:0] sram_raddr_w1,			//queue 4~7
+	input [6:0] addr_serial_num,			// max 126; addr 127 is parked/idle
 
-	//sel for d0~d7
-	output reg [9:0] sram_raddr_d0,
-	output reg [9:0] sram_raddr_d1
+	// weight read addresses
+	output reg [9:0] sram_raddr_w0,			// columns 0–3
+	output reg [9:0] sram_raddr_w1,			// columns 4–7
+
+	// data read addresses
+	output reg [9:0] sram_raddr_d0,			// rows 0–3
+	output reg [9:0] sram_raddr_d1			// rows 4–7
 );
 
 wire [9:0] sram_raddr_w0_nx;			//queue 0~3

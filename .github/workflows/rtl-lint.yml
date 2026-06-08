@@ -1,0 +1,56 @@
+name: RTL Lint
+
+# Lint and elaborate the TPU RTL on every push and pull request.
+on:
+  push:
+    branches: [ main, master ]
+    paths:
+      - 'rtl/**'
+      - '.github/workflows/rtl-lint.yml'
+  pull_request:
+    paths:
+      - 'rtl/**'
+      - '.github/workflows/rtl-lint.yml'
+  workflow_dispatch:
+
+jobs:
+  lint:
+    name: Verilator + Icarus elaboration
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install RTL tooling
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends verilator iverilog
+
+      - name: Show tool versions
+        run: |
+          verilator --version
+          iverilog -V | head -n 1
+
+      - name: Verilator lint (synthesizable core RTL)
+        run: |
+          verilator --lint-only -Wall -Wno-fatal \
+            -Wno-WIDTHEXPAND -Wno-WIDTHTRUNC \
+            --top-module tpu_core \
+            rtl/tpu_core.v \
+            rtl/systolic.v \
+            rtl/systolic_controll.v \
+            rtl/addr_sel.v \
+            rtl/quantize.v \
+            rtl/write_out.v
+
+      - name: Icarus Verilog elaboration check
+        run: |
+          iverilog -g2012 -t null -Wall \
+            -o /dev/null \
+            rtl/tpu_core.v \
+            rtl/systolic.v \
+            rtl/systolic_controll.v \
+            rtl/addr_sel.v \
+            rtl/quantize.v \
+            rtl/write_out.v

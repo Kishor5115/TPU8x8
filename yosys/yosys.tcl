@@ -45,7 +45,7 @@ set pdk_root "../ihp13/pdk"
 
 if {![file exists $pdk_root]} {
     puts "ERROR: PDK root directory not found: $pdk_root"
-    puts "Expected structure: /home/kishor/tpu/ihp13/pdk/ihp-sg13g2/"
+    puts "Expected structure: <repo_root>/ihp13/pdk/ihp-sg13g2/"
     exit 1
 }
 

@@ -24,8 +24,8 @@
 //           │     ├── systolic_controll
 //           │     ├── quantize
 //           │     └── write_out
-//           ├── 2× RM_IHPSG13_1P_1024x64  (Weight + Data SRAMs)
-//           └── 6× RM_IHPSG13_1P_256x64   (Output Banks A/B/C)
+//           ├── 2× RM_IHPSG13_1P_256x64   (Weight + Data SRAMs)
+//           └── 6× RM_IHPSG13_1P_64x64    (Output Banks A/B/C)
 //
 // ============================================================================
 

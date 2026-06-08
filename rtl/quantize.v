@@ -1,4 +1,13 @@
-//-------ori data is from systolic array, output to quantized data-------
+// ============================================================================
+// Module      : quantize
+// Description : Saturating quantizer — 21-bit accumulator → 16-bit output
+// Technology  : IHP SG13G2 130nm
+//
+// Each of the ARRAY_SIZE lanes is independently clipped to the signed INT16
+// range [-32768, 32767]. Values within range pass through their lower 16 bits;
+// out-of-range values saturate to the corresponding extreme. Purely
+// combinational (no clock).
+// ============================================================================
 
 module quantize#(
 	parameter ARRAY_SIZE = 8,
@@ -18,7 +27,7 @@ reg signed [ORI_WIDTH-1:0] ori_shifted_data;
 
 integer i;
 
-//quantize the data from 32 bit(16: integer, 8: precision) to 16 bit(8: integer, 8: precision)
+// Clip each lane from the 21-bit accumulator width down to signed 16-bit.
 always@* begin
 	for(i=0; i<ARRAY_SIZE; i=i+1) begin	
 		ori_shifted_data = ori_data[i*ORI_WIDTH +: ORI_WIDTH];

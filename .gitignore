@@ -62,6 +62,7 @@ out/
 .env
 *.env
 env.sh
+!env.sh.example
 .venv/
 
 # ===============================
@@ -69,6 +70,7 @@ env.sh
 # ===============================
 docs/*.html
 docs/*.pdf
+claude.md
 
 # ===============================
 # 🔹 Editors / OS
@@ -76,3 +78,8 @@ docs/*.pdf
 .vscode/
 .DS_Store
 yosys/tmp/
+
+# ===============================
+# 🔹 Local Tools & Vendored Binaries (not for distribution)
+# ===============================
+.tools/

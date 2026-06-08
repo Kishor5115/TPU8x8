@@ -1,0 +1,25 @@
+8×8 TPU ASIC — RTL-to-GDSII on IHP SG13G2 (130 nm)
+Copyright 2026 Kishor (https://github.com/Kishor5115/TPU8x8)
+
+This product is licensed under the Apache License, Version 2.0 (the "License").
+You may obtain a copy of the License in the accompanying LICENSE file or at:
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+--------------------------------------------------------------------------------
+Third-Party Components
+--------------------------------------------------------------------------------
+
+This repository bundles or depends on the following third-party material, which
+remains under its respective upstream license:
+
+* IHP SG13G2 Open PDK (ihp13/pdk/)
+  IHP Microelectronics — see ihp13/pdk/LICENSE for terms.
+  https://github.com/IHP-GmbH/IHP-Open-PDK
+
+* IHP SG13G2 bondpad collateral (ihp13/bondpad/)
+  IHP Microelectronics, under the PDK license terms above.
+
+The standard-cell, I/O, and SRAM macro collateral referenced by the
+physical-design flow are property of IHP Microelectronics and are governed by
+the IHP Open PDK license, not by this project's Apache 2.0 license.

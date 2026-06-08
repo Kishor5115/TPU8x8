@@ -1,0 +1,27 @@
+cff-version: 1.2.0
+message: "If you use this project, please cite it as below."
+title: "8x8 TPU ASIC — RTL-to-GDSII on IHP SG13G2 (130 nm)"
+abstract: >-
+  An open-source 8x8 systolic-array Tensor Processing Unit (TPU) for INT8 matrix
+  multiplication, implemented from RTL to a tape-out-ready GDSII on the IHP
+  SG13G2 130 nm Open PDK using a fully scripted Yosys + OpenROAD flow.
+type: software
+authors:
+  - family-names: Kishor
+    alias: Kishor5115
+    email: kishor.231ec225@nitk.edu.in
+repository-code: "https://github.com/Kishor5115/TPU8x8"
+url: "https://github.com/Kishor5115/TPU8x8"
+license: Apache-2.0
+keywords:
+  - TPU
+  - systolic array
+  - ASIC
+  - RTL-to-GDSII
+  - OpenROAD
+  - Yosys
+  - IHP SG13G2
+  - open-source hardware
+  - VLSI
+version: "1.0.0"
+date-released: "2026-06-08"

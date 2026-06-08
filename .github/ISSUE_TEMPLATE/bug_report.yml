@@ -1,0 +1,68 @@
+name: Bug Report
+description: Report a problem with the RTL, simulation, or the RTL-to-GDSII flow.
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a bug report! Please fill in as much
+        detail as possible so the issue can be reproduced.
+  - type: dropdown
+    id: stage
+    attributes:
+      label: Affected stage
+      description: Where does the problem occur?
+      options:
+        - RTL simulation (pre-synthesis)
+        - Synthesis (Yosys)
+        - Place & Route (OpenROAD)
+        - GDS / DRC / LVS (KLayout)
+        - Gate-level simulation (post-synthesis)
+        - Documentation
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: A clear and concise description of the bug.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: Exact commands you ran.
+      placeholder: |
+        1. source env.sh
+        2. make pnr
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected vs. actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant log output
+      description: Paste the relevant portion of the log (will be formatted as code).
+      render: shell
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Tool versions and OS.
+      placeholder: |
+        - OS: Ubuntu 22.04
+        - Yosys: 0.x
+        - OpenROAD: x.x
+        - KLayout: 0.29.2
+        - Icarus Verilog: 12.0
+    validations:
+      required: true

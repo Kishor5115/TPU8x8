@@ -1,5 +1,20 @@
-//----for systolic array, we have 32x32 output, 32x32 weight buffer, 32x32
-//data buffer
+// ============================================================================
+// Module      : systolic
+// Description : 8×8 Output-Stationary Systolic MAC Array
+// Technology  : IHP SG13G2 130nm
+//
+// Each of the 64 processing elements (PEs) holds an accumulator that builds up
+// one element of the result matrix C = D × Wᵀ. Weights stream down through the
+// rows while activations (data) stream right across the columns. Diagonal wave-
+// fronts (indexed by `cycle_num`) gate when each PE multiplies-accumulates so
+// that partial products line up in time. Results are read out in anti-diagonal
+// order, selected by `matrix_index`.
+//
+// Datapath widths:
+//   DATA_WIDTH        = 8   (INT8 operands)
+//   product           = 16  (8×8)
+//   OUTCOME_WIDTH     = 21  (16 + 5 guard bits for accumulation)
+// ============================================================================
 
 module systolic#(
 	parameter ARRAY_SIZE = 8,
@@ -9,15 +24,14 @@ module systolic#(
 (
 	input clk,
 	input srstn,
-	input alu_start,												//enable signal, can start do mul and add plus shift
+	input alu_start,												// enable: start multiply-accumulate + shift
 	input [8:0] cycle_num,
-	//input pos_table [0:ARRAY_SIZE-1] [0:ARRAY_SIZE-1],
 
-	input [SRAM_DATA_WIDTH-1:0] sram_rdata_w0,		//32 weight queue
-	input [SRAM_DATA_WIDTH-1:0] sram_rdata_w1,
+	input [SRAM_DATA_WIDTH-1:0] sram_rdata_w0,		// weight stream, columns 0–3
+	input [SRAM_DATA_WIDTH-1:0] sram_rdata_w1,		// weight stream, columns 4–7
 
-	input [SRAM_DATA_WIDTH-1:0] sram_rdata_d0,		//32 data queue
-	input [SRAM_DATA_WIDTH-1:0] sram_rdata_d1,
+	input [SRAM_DATA_WIDTH-1:0] sram_rdata_d0,		// data stream, rows 0–3
+	input [SRAM_DATA_WIDTH-1:0] sram_rdata_d1,		// data stream, rows 4–7
 
 	input [5:0] matrix_index,
 	output reg signed [(ARRAY_SIZE*(DATA_WIDTH+DATA_WIDTH+5))-1:0] mul_outcome
